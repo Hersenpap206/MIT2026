@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+data/
+*.wav
+*.csv
+.venv/
+venv/
+*.egg-info/

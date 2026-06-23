@@ -1,0 +1,27 @@
+# Project Loods WP3 — STM32MP257F-EV1 (Android/AOSP via Termux)
+# Installeer NIET met pip alleen — eerst de Termux-pakketten zelf:
+#   pkg update && pkg install python termux-api libusb clang
+#   pip install -r requirements_termux.txt
+#
+# OPMERKINGEN BIJ DIT PLATFORM (zie scripts/android_stm32_termux/sensor_reader.py-docstring):
+# - openai-whisper staat hier BEWUST NIET in: te zwaar voor de STM32MP257F-rekenkracht en de
+#   PyTorch-dependency heeft geen betrouwbare ARM/Termux-wheel. Gebruik vosk (lichter) of voer
+#   de Whisper-vergelijking alleen uit op Linux/Windows.
+# - azure-cognitiveservices-speech: de C++ SDK-wheel is mogelijk niet beschikbaar voor
+#   Termux/ARM. Verifieer on-site met `pip install azure-cognitiveservices-speech`; als dat
+#   faalt, voer de T2.3-cloudvergelijking voor dit platform uit via de REST Speech-to-Text API
+#   met `requests` (al beschikbaar) i.p.v. de SDK.
+# - webrtcvad compileert een C-extensie; vereist `clang` (zie pkg install hierboven) en kan
+#   alsnog falen op exotische Android/Termux-builds — test dit als eerste, vóór de testdag.
+
+# Hardware / sensoren (scripts/android_stm32_termux/sensor_reader.py)
+pyusb>=1.2.1
+
+# Spraakherkenning (scripts/speech/*.py) — alleen vosk, zie opmerking hierboven
+vosk>=0.3.45
+jiwer>=3.0.3
+requests>=2.31.0
+
+# Dialoog / cross-device / VAD (scripts/dialogue/*.py)
+paho-mqtt>=2.0.0
+webrtcvad>=2.0.10

@@ -1,0 +1,26 @@
+# Project Loods WP3 — LattePanda 3 Delta 864, Windows-platform
+# Installeer met: pip install -r requirements_windows.txt
+# I2C op Windows loopt via de MCP2221A USB-bridge (Adafruit Blinka) — geen smbus2 (werkt niet
+# native op Windows). Zet vóór gebruik: set BLINKA_MCP2221=1 (gebeurt automatisch in
+# scripts/windows_lattepanda/sensor_reader.py). Installeer ook de MCP2221A-driver van Microchip
+# (HID-class driver, meestal automatisch via Windows Update).
+
+# Hardware / sensoren (scripts/windows_lattepanda/sensor_reader.py)
+adafruit-blinka>=8.30.0
+hidapi>=0.14.0
+
+# Microfoonopname (scripts/mic_capture.py)
+sounddevice>=0.4.6
+soundfile>=0.12.1
+
+# Spraakherkenning (scripts/speech/*.py)
+openai-whisper>=20231117
+vosk>=0.3.45
+azure-cognitiveservices-speech>=1.34.0
+jiwer>=3.0.3
+
+# Dialoog / cross-device / VAD (scripts/dialogue/*.py)
+paho-mqtt>=2.0.0
+# webrtcvad compileert een C-extensie en heeft op Windows Visual C++ Build Tools nodig. Als dat
+# faalt, gebruik in plaats daarvan: pip install webrtcvad-wheels (zelfde API, voorgebouwde wheel).
+webrtcvad>=2.0.10

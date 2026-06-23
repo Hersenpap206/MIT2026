@@ -1,0 +1,8 @@
+# Project Loods WP3 — laptop-side analyse (scripts/analysis/*.py)
+# Deze scripts draaien NIET op de SBC's, alleen op de laptop die de geaggregeerde data verwerkt.
+# Installeer met: pip install -r requirements_laptop.txt
+
+pandas>=2.2.0
+matplotlib>=3.8.0
+tabulate>=0.9.0
+jiwer>=3.0.3
