@@ -1,0 +1,61 @@
+uiting_id,tekst,categorie,afstand_m
+N01g,Ik heb erge pijn op mijn borst,gefluisterd,1.5
+N01e,Ik heb erge pijn op mijn borst,emotioneel,2.5
+N01i,Ik heb pijn op mijn...,incompleet,4.0
+N02g,Ik kan niet goed meer ademen,gefluisterd,2.5
+N02e,Ik kan niet goed meer ademen,emotioneel,4.0
+N02i,Ik kan niet meer...,incompleet,1.5
+N03g,Help ik ben gevallen en kom niet meer overeind,gefluisterd,4.0
+N03e,Help ik ben gevallen en kom niet meer overeind,emotioneel,1.5
+N03i,Help ik ben...,incompleet,2.5
+N04g,Ik bloed kom snel naar mijn kamer,gefluisterd,1.5
+N04e,Ik bloed kom snel naar mijn kamer,emotioneel,2.5
+N04i,Ik bloed kom...,incompleet,4.0
+N05g,Ik denk dat er iemand in mijn kamer staat ik ben bang,gefluisterd,2.5
+N05e,Ik denk dat er iemand in mijn kamer staat ik ben bang,emotioneel,4.0
+N05i,Ik denk dat er iemand...,incompleet,1.5
+H01g,Kunt u iemand sturen ik heb hulp nodig,gefluisterd,4.0
+H01e,Kunt u iemand sturen ik heb hulp nodig,emotioneel,1.5
+H01i,Kunt u iemand...,incompleet,2.5
+H02g,Ik heb mijn medicijnen nog niet gehad vanavond,gefluisterd,1.5
+H02e,Ik heb mijn medicijnen nog niet gehad vanavond,emotioneel,2.5
+H02i,Ik heb mijn medicijnen...,incompleet,4.0
+H03g,Mijn infuus piept al een tijdje kan iemand kijken,gefluisterd,2.5
+H03e,Mijn infuus piept al een tijdje kan iemand kijken,emotioneel,4.0
+H03i,Mijn infuus piept...,incompleet,1.5
+H04g,Ik moet naar het toilet maar kom niet uit bed,gefluisterd,4.0
+H04e,Ik moet naar het toilet maar kom niet uit bed,emotioneel,1.5
+H04i,Ik moet naar het...,incompleet,2.5
+H05g,Kunt u het licht voor me aandoen ik zie niets,gefluisterd,1.5
+H05e,Kunt u het licht voor me aandoen ik zie niets,emotioneel,2.5
+H05i,Kunt u het licht...,incompleet,4.0
+S01g,Ik kan niet slapen ik voel me onrustig,gefluisterd,2.5
+S01e,Ik kan niet slapen ik voel me onrustig,emotioneel,4.0
+S01i,Ik kan niet... ik voel me...,incompleet,1.5
+S02g,Ik ben bang in het donker,gefluisterd,4.0
+S02e,Ik ben bang in het donker,emotioneel,1.5
+S02i,Ik ben bang in...,incompleet,2.5
+S03g,Kunt u even met me praten ik voel me alleen,gefluisterd,1.5
+S03e,Kunt u even met me praten ik voel me alleen,emotioneel,2.5
+S03i,Kunt u even...,incompleet,4.0
+S04g,Ik mis mijn familie heel erg vanavond,gefluisterd,2.5
+S04e,Ik mis mijn familie heel erg vanavond,emotioneel,4.0
+S04i,Ik mis mijn...,incompleet,1.5
+S05g,Ik voel me eenzaam kunt u even langskomen,gefluisterd,4.0
+S05e,Ik voel me eenzaam kunt u even langskomen,emotioneel,1.5
+S05i,Ik voel me...,incompleet,2.5
+O01g,Ik weet niet goed wat er is,gefluisterd,1.5
+O01e,Ik weet niet goed wat er is,emotioneel,2.5
+O01i,Ik weet niet...,incompleet,4.0
+O02g,Er is iets maar ik weet niet wat,gefluisterd,2.5
+O02e,Er is iets maar ik weet niet wat,emotioneel,4.0
+O02i,Er is iets...,incompleet,1.5
+O03g,Hallo is daar iemand,gefluisterd,4.0
+O03e,Hallo is daar iemand,emotioneel,1.5
+O03i,Hallo... is daar...,incompleet,2.5
+O04g,Ehm ja nee laat maar,gefluisterd,1.5
+O04e,Ehm ja nee laat maar,emotioneel,2.5
+O04i,Ehm... ja...,incompleet,4.0
+O05g,Wacht even oh nee het is niets,gefluisterd,2.5
+O05e,Wacht even oh nee het is niets,emotioneel,4.0
+O05i,Wacht even...,incompleet,1.5

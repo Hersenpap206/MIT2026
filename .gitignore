@@ -3,6 +3,13 @@ __pycache__/
 data/
 *.wav
 *.csv
+# Bron-CSV's van het testcorpus zijn handmatig ontworpen testdata, geen gegenereerde output —
+# die moeten wel meegecommit worden (zie corpus/generate_tts_corpus.py).
+!corpus/bron_*.csv
+# Gegenereerde manifesten/mp3's blijven lokaal (per device/testdag anders, en groot).
+corpus/*_manifest.csv
+corpus/tts_bronnen/
+corpus/opnames/
 .venv/
 venv/
 *.egg-info/

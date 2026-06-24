@@ -1,0 +1,21 @@
+uiting_id,tekst,categorie,afstand_m
+N01,Ik heb erge pijn op mijn borst,normaal,1.0
+N02,Ik kan niet goed meer ademen,normaal,1.0
+N03,Help ik ben gevallen en kom niet meer overeind,normaal,1.0
+N04,Ik bloed kom snel naar mijn kamer,normaal,1.0
+N05,Ik denk dat er iemand in mijn kamer staat ik ben bang,normaal,1.0
+H01,Kunt u iemand sturen ik heb hulp nodig,normaal,1.0
+H02,Ik heb mijn medicijnen nog niet gehad vanavond,normaal,1.0
+H03,Mijn infuus piept al een tijdje kan iemand kijken,normaal,1.0
+H04,Ik moet naar het toilet maar kom niet uit bed,normaal,1.0
+H05,Kunt u het licht voor me aandoen ik zie niets,normaal,1.0
+S01,Ik kan niet slapen ik voel me onrustig,normaal,1.0
+S02,Ik ben bang in het donker,normaal,1.0
+S03,Kunt u even met me praten ik voel me alleen,normaal,1.0
+S04,Ik mis mijn familie heel erg vanavond,normaal,1.0
+S05,Ik voel me eenzaam kunt u even langskomen,normaal,1.0
+O01,Ik weet niet goed wat er is,normaal,1.0
+O02,Er is iets maar ik weet niet wat,normaal,1.0
+O03,Hallo is daar iemand,normaal,1.0
+O04,Ehm ja nee laat maar,normaal,1.0
+O05,Wacht even oh nee het is niets,normaal,1.0

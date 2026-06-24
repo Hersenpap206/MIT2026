@@ -19,6 +19,10 @@ vosk>=0.3.45
 azure-cognitiveservices-speech>=1.34.0
 jiwer>=3.0.3
 
+# Testcorpus-generatie (scripts/corpus/generate_tts_corpus.py) — laptop-only voorbewerking,
+# draait NIET op de SBC's, daarom niet in requirements_linux.txt/requirements_termux.txt.
+edge-tts>=7.0.0
+
 # Dialoog / cross-device / VAD (scripts/dialogue/*.py)
 paho-mqtt>=2.0.0
 # webrtcvad compileert een C-extensie en heeft op Windows Visual C++ Build Tools nodig. Als dat
