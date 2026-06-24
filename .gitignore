@@ -6,6 +6,10 @@ data/
 # Bron-CSV's van het testcorpus zijn handmatig ontworpen testdata, geen gegenereerde output —
 # die moeten wel meegecommit worden (zie corpus/generate_tts_corpus.py).
 !corpus/bron_*.csv
+# Lege beoordelingstemplate (geen interviewdata) mag wel mee; ingevulde resultaten
+# (corpus/expertbeoordeling_resultaten.csv) bevatten input van zorgprofessionals en
+# blijven bewust lokaal — NIET toevoegen aan de publieke GitHub-mirror.
+!corpus/expertbeoordeling_template.csv
 # Gegenereerde manifesten/mp3's blijven lokaal (per device/testdag anders, en groot).
 corpus/*_manifest.csv
 corpus/tts_bronnen/
