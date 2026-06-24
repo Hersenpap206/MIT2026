@@ -5,9 +5,9 @@ N01i,Ik heb pijn op mijn...,incompleet,4.0
 N02g,Ik kan niet goed meer ademen,gefluisterd,2.5
 N02e,Ik kan niet goed meer ademen,emotioneel,4.0
 N02i,Ik kan niet meer...,incompleet,1.5
-N03g,Help ik ben gevallen en kom niet meer overeind,gefluisterd,4.0
-N03e,Help ik ben gevallen en kom niet meer overeind,emotioneel,1.5
-N03i,Help ik ben...,incompleet,2.5
+N03g,Ik heb me gesneden,gefluisterd,4.0
+N03e,Ik heb me gesneden,emotioneel,1.5
+N03i,Ik heb me...,incompleet,2.5
 N04g,Ik bloed kom snel naar mijn kamer,gefluisterd,1.5
 N04e,Ik bloed kom snel naar mijn kamer,emotioneel,2.5
 N04i,Ik bloed kom...,incompleet,4.0
@@ -20,12 +20,12 @@ H01i,Kunt u iemand...,incompleet,2.5
 H02g,Ik heb mijn medicijnen nog niet gehad vanavond,gefluisterd,1.5
 H02e,Ik heb mijn medicijnen nog niet gehad vanavond,emotioneel,2.5
 H02i,Ik heb mijn medicijnen...,incompleet,4.0
-H03g,Mijn infuus piept al een tijdje kan iemand kijken,gefluisterd,2.5
-H03e,Mijn infuus piept al een tijdje kan iemand kijken,emotioneel,4.0
-H03i,Mijn infuus piept...,incompleet,1.5
-H04g,Ik moet naar het toilet maar kom niet uit bed,gefluisterd,4.0
-H04e,Ik moet naar het toilet maar kom niet uit bed,emotioneel,1.5
-H04i,Ik moet naar het...,incompleet,2.5
+H03g,Ik heb nog geen begeleidingsmoment gehad je moet nu komen,gefluisterd,2.5
+H03e,Ik heb nog geen begeleidingsmoment gehad je moet nu komen,emotioneel,4.0
+H03i,Ik heb nog geen begeleidingsmoment...,incompleet,1.5
+H04g,Er staan jongens buiten te schreeuwen ik ben bang en ik heb er last van,gefluisterd,4.0
+H04e,Er staan jongens buiten te schreeuwen ik ben bang en ik heb er last van,emotioneel,1.5
+H04i,Er staan jongens buiten te...,incompleet,2.5
 H05g,Kunt u het licht voor me aandoen ik zie niets,gefluisterd,1.5
 H05e,Kunt u het licht voor me aandoen ik zie niets,emotioneel,2.5
 H05i,Kunt u het licht...,incompleet,4.0
