@@ -19,6 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from common.config import LOODS_MODEL_DIR
 from common.engine_runner import run_engine_batch
 
 try:
@@ -35,7 +36,9 @@ _MODEL_CACHE: dict[str, "whisper.Whisper"] = {}
 def _laad_model(model_naam: str) -> "whisper.Whisper":
     if model_naam not in _MODEL_CACHE:
         print(f"Whisper-model '{model_naam}' laden (eenmalig, kan even duren)...")
-        _MODEL_CACHE[model_naam] = whisper.load_model(model_naam)
+        model_dir = LOODS_MODEL_DIR / "whisper"
+        model_dir.mkdir(parents=True, exist_ok=True)
+        _MODEL_CACHE[model_naam] = whisper.load_model(model_naam, download_root=str(model_dir))
     return _MODEL_CACHE[model_naam]
 
 

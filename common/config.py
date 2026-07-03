@@ -16,6 +16,17 @@ from __future__ import annotations
 import os
 import platform as _platform
 from dataclasses import dataclass, field
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Lokale opslag (D:-schijf, buiten Google Drive sync)
+# Overschrijfbaar via omgevingsvariabelen voor andere platformen/locaties.
+# ---------------------------------------------------------------------------
+
+LOODS_DATA_DIR = Path(os.environ.get("LOODS_DATA_DIR", r"D:\Loods WP3\data"))
+LOODS_AUDIO_DIR = Path(os.environ.get("LOODS_AUDIO_DIR", r"D:\Loods WP3\audio"))
+LOODS_MODEL_DIR = Path(os.environ.get("LOODS_MODEL_DIR", r"D:\Loods WP3\modellen"))
 
 
 # ---------------------------------------------------------------------------
@@ -122,9 +133,8 @@ MIC_SAMPLE_RATE_HZ = 16_000
 MIC_CHANNELS = 1
 MIC_DEVICE_NAME_HINT = "ReSpeaker"   # substring-match in sounddevice device-lijst
 
-# ReSpeaker-aanschaf is NIET bevestigd via een factuur in de projectmap (geen Farnell-
-# factuur aangetroffen). Aangenomen aanwezig per gebruikersinstructie — verifieer dit
-# fysiek vóór de eerste testdag en pas MIC_DEVICE_NAME_HINT aan indien een ander device.
+# ReSpeaker is fysiek geleverd (bevestigd 2026-06-24). Pas MIC_DEVICE_NAME_HINT aan
+# indien de werkelijke devicenaam in sd.query_devices() afwijkt van deze hint.
 
 REPLICATIE_DREMPEL_PCT = 5.0          # max. toegestaan verschil Device A vs B (testplan §9.1)
 WER_BASELINE_DREMPEL_PCT = 10.0       # WBSO/testplan drempelwaarde, stille omgeving

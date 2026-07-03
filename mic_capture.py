@@ -1,10 +1,9 @@
 """
 Microfoonopname (ReSpeaker USB-array) voor project Loods WP3 — Linux (RPi5) en Windows (LattePanda).
 
-LET OP — ReSpeaker-aanschaf is niet bevestigd via een factuur in de projectmap (geen Farnell-
-factuur aangetroffen, zie reconciliatietabel in WP3 Testplan v2/Testplan_WP3_Gedetailleerd_v2.docx).
-Verifieer fysiek vóór de eerste testdag en pas MIC_DEVICE_NAME_HINT in scripts/common/config.py
-aan indien een ander device wordt gebruikt.
+ReSpeaker is fysiek geleverd (bevestigd 2026-06-24). Pas MIC_DEVICE_NAME_HINT in
+scripts/common/config.py aan indien het daadwerkelijke devicenaam in `sd.query_devices()`
+afwijkt van de huidige hint.
 
 TERMUX/ANDROID (STM32MP257F-EV1): dit script werkt daar NIET out-of-the-box. Termux heeft geen
 gegarandeerde ALSA-toegang tot USB-audioklasse-microfoons. Gebruik in plaats daarvan:
@@ -28,7 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from common.config import MIC_CHANNELS, MIC_DEVICE_NAME_HINT, MIC_SAMPLE_RATE_HZ
+from common.config import MIC_CHANNELS, MIC_DEVICE_NAME_HINT, MIC_SAMPLE_RATE_HZ, LOODS_AUDIO_DIR
 
 try:
     import sounddevice as sd
@@ -79,11 +78,13 @@ def neem_op(out_path: str | Path, duur_s: float, device_index: int | None = None
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Microfoonopname (ReSpeaker) voor project Loods")
-    parser.add_argument("--out", required=True, help="pad naar uitvoer .wav-bestand")
+    parser.add_argument("--out", required=False, default=None, help="pad naar uitvoer .wav-bestand (default: D:\\Loods WP3\\audio\\<datum>.wav)")
     parser.add_argument("--duur", type=float, default=5.0, help="opnameduur in seconden")
     parser.add_argument("--device-index", type=int, default=None, help="forceer een specifiek device")
     args = parser.parse_args()
-    neem_op(args.out, args.duur, args.device_index)
+    from datetime import datetime
+    out = args.out or str(LOODS_AUDIO_DIR / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav")
+    neem_op(out, args.duur, args.device_index)
 
 
 if __name__ == "__main__":

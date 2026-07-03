@@ -124,8 +124,8 @@ cross-device-latentie <500ms) en markeert overschrijdingen in het Markdown-rappo
 4. Embedded: `ls -l /dev/i2c-*` → als leeg, ga direct naar het MCP2221A-USB-fallbackpad en
    implementeer de `NotImplementedError`-stubs in `Mcp2221UsbAdapter` (zie datasheet AN1) vóórdat
    je verder gaat — dit IS de bekende, vooraf gevlagde onzekerheid in dit plan.
-5. Microfoon: bevestig dat de ReSpeaker daadwerkelijk is aangeschaft/geleverd (factuur ontbrak in
-   de projectmap) vóór `mic_capture.py` te gebruiken; test `vind_respeaker_device_index()` los.
+5. Microfoon: ReSpeaker is geleverd (bevestigd 2026-06-24) — sluit aan en test
+   `vind_respeaker_device_index()` los vóór `mic_capture.py` voor een echte opname te gebruiken.
 6. Powermeter/SPL-meter: er is geen automatische uitlezing — loop één keer `power_monitor.py`
    en `spl_monitor.py` door om te wennen aan het manual-assisted promptritme vóór de echte meting.
 7. MQTT-broker: zorg dat beide devices bij dezelfde broker (lokaal IP) kunnen — test eerst met

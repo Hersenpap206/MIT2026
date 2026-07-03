@@ -23,7 +23,7 @@ from datetime import datetime, date, time as dtime
 from pathlib import Path
 from typing import Any
 
-from .config import RunContext
+from .config import RunContext, LOODS_DATA_DIR
 
 # Volgorde van kolommen = canonieke volgorde uit Data_Codebook.md. Wijzig hier ALLEEN in
 # combinatie met een update van het codebook-document, anders lopen schema en data uit elkaar.
@@ -121,9 +121,11 @@ class TestLogger:
         self,
         test_id: str,
         fase: str,
-        out_dir: str | Path = "data",
+        out_dir: str | Path | None = None,
         context: RunContext | None = None,
     ) -> None:
+        if out_dir is None:
+            out_dir = LOODS_DATA_DIR
         self.test_id = test_id
         self.fase = fase
         self.context = context or RunContext()
@@ -184,7 +186,7 @@ class TestLogger:
         self.close()
 
 
-def init_log(test_id: str, fase: str, out_dir: str | Path = "data") -> TestLogger:
+def init_log(test_id: str, fase: str, out_dir: str | Path | None = None) -> TestLogger:
     """Backwards-compatible alias — komt overeen met de naam genoemd in de taakomschrijving
     J. Esselink WP3 §6.1 (logging_utils.py: init_log(), log_run(), export_csv(), export_json())."""
     return TestLogger(test_id=test_id, fase=fase, out_dir=out_dir)

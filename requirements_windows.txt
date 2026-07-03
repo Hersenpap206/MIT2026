@@ -25,6 +25,5 @@ edge-tts>=7.0.0
 
 # Dialoog / cross-device / VAD (scripts/dialogue/*.py)
 paho-mqtt>=2.0.0
-# webrtcvad compileert een C-extensie en heeft op Windows Visual C++ Build Tools nodig. Als dat
-# faalt, gebruik in plaats daarvan: pip install webrtcvad-wheels (zelfde API, voorgebouwde wheel).
-webrtcvad>=2.0.10
+# webrtcvad-wheels is de voorgebouwde variant (zelfde API als webrtcvad, geen Visual C++ nodig).
+webrtcvad-wheels>=2.0.10
