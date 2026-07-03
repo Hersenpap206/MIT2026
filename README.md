@@ -49,11 +49,26 @@ i2cdetect -y 1       # controleer: 0x38 (DHT20) en 0x48 (ADS1115) moeten zichtba
 
 ### Windows (LattePanda 3 Delta)
 
+Voor een **nieuwe LattePanda** (eerste keer setup): voer het volledig geautomatiseerde
+setup-script uit als administrator. Dit installeert Python, VC++, ffmpeg, alle packages,
+de mapstructuur op D: en de Whisper/Vosk modellen in één keer:
+
+```powershell
+# 1. Open PowerShell als administrator (rechtermuisknop -> "Als administrator uitvoeren")
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+& "D:\My Drive\Claude\Projects\MIT Haalbaarheid 2026\scripts\setup_windows_lattepanda.ps1"
+```
+
+Voor handmatige installatie:
+
 ```powershell
 pip install -r requirements_windows.txt
 # Sluit de MCP2221A aan via USB; Windows installeert de HID-driver doorgaans automatisch.
-# Als webrtcvad niet compileert: pip install webrtcvad-wheels in plaats daarvan.
+# webrtcvad-wheels is al opgenomen in requirements_windows.txt (geen C++ Build Tools nodig).
 ```
+
+Stel na installatie de omgevingsvariabelen in (zie sectie hierboven) en stel `LOODS_DEVICE`
+in op `A` of `B` afhankelijk van welk fysiek device dit is.
 
 ### Embedded (STM32MP257F-EV1, Termux/Android)
 
