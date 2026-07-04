@@ -41,11 +41,27 @@ PowerShell: `$env:LOODS_DEVICE = "A"`. Bash/Termux: `export LOODS_DEVICE=A`.
 ### Linux (Raspberry Pi 5)
 
 ```bash
-sudo apt install python3-smbus i2c-tools
+sudo apt install python3-smbus i2c-tools libportaudio2
 sudo raspi-config   # Interface Options -> I2C -> enable, reboot
-pip install -r requirements_linux.txt
+pip install -r requirements_linux.txt --break-system-packages
 i2cdetect -y 1       # controleer: 0x38 (DHT20) en 0x48 (ADS1115) moeten zichtbaar zijn
 ```
+
+Vosk model downloaden (Nederlandstalig, small):
+
+```bash
+mkdir -p ~/modellen
+cd ~/modellen
+wget https://alphacephei.com/vosk/models/vosk-model-small-nl-0.22.zip
+unzip vosk-model-small-nl-0.22.zip
+```
+
+⚠️ **GrovePi+ hat is niet compatibel** met deze scripts. De scripts gebruiken directe `smbus2`
+en `gpiozero` aansluitingen. Bij gebruik van een GrovePi+ hat:
+- DHT20 op de I2C-poort van de hat werkt wel (passthrough naar RPi I2C-bus).
+- ADS1115 moet als **los I2C-bordje** op de I2C-poort aangesloten worden; sluit de licht sensor
+  aan op ADS1115 kanaal A0, **niet** op de analoge poort (A0–A2) van de GrovePi+ hat zelf.
+- PIR moet **direct** op RPi GPIO17 (pin 11) worden aangesloten, buiten de GrovePi+ om.
 
 ### Windows (LattePanda 3 Delta)
 
