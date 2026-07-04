@@ -1,4 +1,4 @@
-# Setup-script LattePanda 3 Delta (Windows) — Project Loods WP3
+﻿# Setup-script LattePanda 3 Delta (Windows) — Project Loods WP3
 # Voer uit in PowerShell als administrator:
 #   Right-click PowerShell -> "Als administrator uitvoeren"
 #   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -114,16 +114,17 @@ Stap "8. Verificatie"
 $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","User") + ";" +
             [System.Environment]::GetEnvironmentVariable("PATH","Machine")
 $check = @'
-import sys
-sys.path.insert(0, r"D:\My Drive\Claude\Projects\MIT Haalbaarheid 2026\scripts")
+import sys, shutil
+sys.path.insert(0, sys.argv[1])
 import adafruit_blinka, hid, sounddevice, soundfile, whisper, vosk
 import azure.cognitiveservices.speech, jiwer, edge_tts, paho.mqtt.client, webrtcvad
 print("Alle packages OK")
-import subprocess, shutil
 if shutil.which("ffmpeg"): print("ffmpeg OK")
-else: print("WAARSCHUWING: ffmpeg niet in PATH — herstart terminal na setup")
+else: print("WAARSCHUWING: ffmpeg niet in PATH -- herstart terminal na setup")
 '@
-& $pip -c $check
+$checkFile = Join-Path $env:TEMP "loods_verify.py"
+Set-Content -Path $checkFile -Value $check -Encoding UTF8
+& $pip $checkFile $PSScriptRoot
 
 Write-Host "`n" + ("="*50) -ForegroundColor Green
 Write-Host "Setup klaar! Stel voor elke testrun in:" -ForegroundColor Green
