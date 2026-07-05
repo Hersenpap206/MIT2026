@@ -32,11 +32,17 @@ sudo apt install -y python3-smbus i2c-tools libportaudio2 unzip
 ok "Systeempackages geinstalleerd"
 
 stap "2. I2C inschakelen"
-if lsmod | grep -q i2c_dev; then
-    ok "I2C al ingeschakeld — sla over"
+# LET OP: lsmod | grep i2c_dev is GEEN betrouwbare check op RPi5 — de RP1-chip
+# heeft standaard al twee onboard I2C-bussen (i2c-dev dus altijd geladen),
+# los van de header-pinnen (GPIO2/3). Check daarom expliciet dtparam=i2c_arm
+# in config.txt.
+CONFIG_TXT="/boot/firmware/config.txt"
+[ -f "$CONFIG_TXT" ] || CONFIG_TXT="/boot/config.txt"
+if grep -qE "^dtparam=i2c_arm=on" "$CONFIG_TXT" 2>/dev/null; then
+    ok "I2C (header-pinnen) al ingeschakeld in $CONFIG_TXT — sla over"
 else
     sudo raspi-config nonint do_i2c 0
-    info "I2C ingeschakeld — een reboot is nodig voordat i2cdetect werkt"
+    info "I2C ingeschakeld in $CONFIG_TXT — een reboot is nodig voordat de header-pinnen I2C-bus verschijnt"
     REBOOT_NODIG=1
 fi
 
