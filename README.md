@@ -40,6 +40,19 @@ PowerShell: `$env:LOODS_DEVICE = "A"`. Bash/Termux: `export LOODS_DEVICE=A`.
 
 ### Linux (Raspberry Pi 5)
 
+Voor een **nieuwe RPi5** (eerste keer setup, of om een tweede device identiek aan het
+eerste te brengen): voer het geautomatiseerde setup-script uit. Dit installeert
+systeempackages, schakelt I2C in, cloned de repo, installeert alle Python-packages en
+download de Whisper/Vosk-modellen in één keer:
+
+```bash
+wget -O setup_linux_rpi5.sh https://raw.githubusercontent.com/Hersenpap206/MIT2026/main/scripts/setup_linux_rpi5.sh
+chmod +x setup_linux_rpi5.sh
+./setup_linux_rpi5.sh B   # of "A" — welk device dit fysiek is
+```
+
+Voor handmatige installatie:
+
 ```bash
 sudo apt install python3-smbus i2c-tools libportaudio2
 sudo raspi-config   # Interface Options -> I2C -> enable, reboot
