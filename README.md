@@ -46,7 +46,7 @@ systeempackages, schakelt I2C in, cloned de repo, installeert alle Python-packag
 download de Whisper/Vosk-modellen in één keer:
 
 ```bash
-wget -O setup_linux_rpi5.sh https://raw.githubusercontent.com/Hersenpap206/MIT2026/main/scripts/setup_linux_rpi5.sh
+wget -O setup_linux_rpi5.sh https://raw.githubusercontent.com/Hersenpap206/MIT2026/main/setup_linux_rpi5.sh
 chmod +x setup_linux_rpi5.sh
 ./setup_linux_rpi5.sh B   # of "A" — welk device dit fysiek is
 ```

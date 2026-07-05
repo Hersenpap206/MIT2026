@@ -50,7 +50,7 @@ else
 fi
 
 stap "4. Python packages installeren"
-pip install -r "$REPO_DIR/scripts/requirements_linux.txt" --break-system-packages
+pip install -r "$REPO_DIR/requirements_linux.txt" --break-system-packages
 ok "Packages geinstalleerd"
 
 stap "5. Vosk NL-model downloaden"
@@ -86,7 +86,7 @@ set_env_line "LOODS_SW_VERSION" "v1.0-dev"
 ok "LOODS_DEVICE=$DEVICE, LOODS_OPERATOR, LOODS_SW_VERSION toegevoegd aan ~/.bashrc"
 
 stap "8. Verificatie"
-python3 - "$REPO_DIR/scripts" <<'EOF'
+python3 - "$REPO_DIR" <<'EOF'
 import sys
 sys.path.insert(0, sys.argv[1])
 import smbus2, gpiozero, sounddevice, soundfile, whisper, vosk
