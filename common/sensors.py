@@ -40,6 +40,16 @@ class Dht20Reading:
     vocht_pct: float
 
 
+def _crc8(data: bytes) -> int:
+    """CRC-8 volgens de AHT20/DHT20-datasheet: polynoom 0x31, startwaarde 0xFF."""
+    crc = 0xFF
+    for byte in data:
+        crc ^= byte
+        for _ in range(8):
+            crc = ((crc << 1) ^ 0x31) & 0xFF if crc & 0x80 else (crc << 1) & 0xFF
+    return crc
+
+
 class Dht20Driver:
     def __init__(self, bus: I2CBus, address: int) -> None:
         self._bus = bus
@@ -51,6 +61,9 @@ class Dht20Driver:
         data = self._bus.read(self._address, 7)
         if len(data) < 7:
             raise IOError(f"DHT20: onvolledig antwoord ({len(data)} bytes, 7 verwacht)")
+
+        if _crc8(data[:6]) != data[6]:
+            raise IOError("DHT20: CRC-fout — storing op de I2C-bus (kabellengte/pull-ups?), meting overgeslagen")
 
         status = data[0]
         if status & 0x80:

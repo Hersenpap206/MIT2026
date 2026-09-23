@@ -54,7 +54,7 @@ chmod +x setup_linux_rpi5.sh
 Voor handmatige installatie:
 
 ```bash
-sudo apt install python3-smbus i2c-tools libportaudio2
+sudo apt install python3-smbus python3-lgpio i2c-tools libportaudio2
 sudo raspi-config   # Interface Options -> I2C -> enable, reboot
 pip install -r requirements_linux.txt --break-system-packages
 i2cdetect -y 1       # controleer: 0x38 (DHT20) en 0x48 (ADS1115) moeten zichtbaar zijn
