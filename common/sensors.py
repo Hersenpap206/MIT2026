@@ -74,7 +74,7 @@ _ADS1115_REG_CONFIG = 0x01
 
 # Config-bits: single-shot, kanaal A0 t.o.v. GND, PGA=±4.096V, 128SPS, comparator uit.
 # (zie ADS1115 datasheet Table 8 voor de volledige bit-layout)
-_ADS1115_CONFIG_BASE = 0xC1 << 8 | 0x83  # MUX=AIN0/GND, PGA=4.096V, MODE=single-shot, start=1
+_ADS1115_CONFIG_BASE = 0xC3 << 8 | 0x83  # MUX=AIN0/GND, PGA=4.096V, MODE=single-shot, start=1
 _ADS1115_FSR_VOLTAGE = 4.096
 _ADS1115_CONVERSION_DELAY_S = 0.01  # >8ms bij 128SPS
 
@@ -90,7 +90,10 @@ def _ads1115_config_for_channel(channel: int) -> int:
     if channel not in (0, 1, 2, 3):
         raise ValueError("ADS1115-kanaal moet 0-3 zijn")
     mux_bits = (0b100 + channel) << 12  # single-ended AINx vs GND, zie datasheet Table 8
-    base_without_mux = _ADS1115_CONFIG_BASE & 0x0FFF
+    # Masker wist alleen de MUX-bits (14-12). Bit 15 (OS = start conversie) MOET behouden
+    # blijven: zonder dat bit start de ADS1115 geen nieuwe meting en levert het
+    # conversieregister de vorige waarde opnieuw op.
+    base_without_mux = _ADS1115_CONFIG_BASE & 0x8FFF
     return mux_bits | base_without_mux
 
 
