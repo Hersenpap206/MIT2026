@@ -57,4 +57,4 @@ Je taak is de administratieve kant van het project bijhouden zodat Wim Boeve bij
 | Projectleider | Wim Boeve (wimboeve@gmail.com) |
 | Medewerker | J. Esselink |
 | Lokale datamap | `D:\Loods WP3\` |
-| Projectdocumenten | `D:\My Drive\Claude\Projects\MIT Haalbaarheid 2026\` |
+| Projectdocumenten | `D:\My Drive\Claude\MIT Haalbaarheid 2026\` |

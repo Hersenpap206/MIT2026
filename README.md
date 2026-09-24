@@ -85,7 +85,7 @@ de mapstructuur op D: en de Whisper/Vosk modellen in één keer:
 ```powershell
 # 1. Open PowerShell als administrator (rechtermuisknop -> "Als administrator uitvoeren")
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-& "D:\My Drive\Claude\Projects\MIT Haalbaarheid 2026\scripts\setup_windows_lattepanda.ps1"
+& "D:\My Drive\Claude\MIT Haalbaarheid 2026\scripts\setup_windows_lattepanda.ps1"
 ```
 
 Voor handmatige installatie:
