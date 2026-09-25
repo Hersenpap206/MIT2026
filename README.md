@@ -96,8 +96,30 @@ pip install -r requirements_windows.txt
 # webrtcvad-wheels is al opgenomen in requirements_windows.txt (geen C++ Build Tools nodig).
 ```
 
-Stel na installatie de omgevingsvariabelen in (zie sectie hierboven) en stel `LOODS_DEVICE`
-in op `A` of `B` afhankelijk van welk fysiek device dit is.
+Stel na installatie `LOODS_DEVICE` in op `A` of `B` afhankelijk van welk fysiek device dit is:
+`.\loods.cmd device A` (blijft bewaard).
+
+#### Draaien vanaf de Google Drive-map (`loods.cmd`)
+
+De scripts-map staat als git-clone in Google Drive
+(`D:\My Drive\Claude\Projects\MIT Haalbaarheid 2026\scripts`). Start alles via `loods.cmd` in
+die map. Die zet zelf de werkmap, `BLINKA_MCP2221`, `PYTHONUTF8`, `LOODS_SW_VERSION` (= git-commit,
+ook zonder geïnstalleerde git) en voorkomt `__pycache__`-mappen die Drive anders blijft syncen.
+
+```powershell
+cd "D:\My Drive\Claude\Projects\MIT Haalbaarheid 2026\scripts"
+.\loods.cmd check                  # Drive-offline-status, Python, packages, mappen, modellen
+.\loods.cmd diagnose               # sensor-bedradingscheck via MCP2221A
+.\loods.cmd sensoren -n 60 -i 2    # metingen printen
+.\loods.cmd run speech\whisper_runner.py --manifest corpus\T2.1_manifest.csv --test-id T2.1 --model small
+```
+
+- **Zonder internet (op locatie):** staat Drive in stream-modus, maak de map `scripts` dan vóór
+  vertrek *offline beschikbaar* (rechtsklik in Verkenner). `loods.cmd check` waarschuwt als er nog
+  bestanden alleen online staan.
+- **Code bijwerken:** `git pull` op één machine (bv. de laptop) en Drive laten syncen. Draai git
+  nooit tegelijk op twee machines in dezelfde Drive-map — dat kan `.git` beschadigen.
+- **Meetdata en audio** gaan naar `D:\Loods WP3` (lokaal, buiten Drive), niet naar de scripts-map.
 
 ### Embedded (STM32MP257F-EV1, Termux/Android)
 
@@ -162,9 +184,9 @@ cross-device-latentie <500ms) en markeert overschrijdingen in het Markdown-rappo
 
 1. `python -m py_compile` over alle scripts is al gedaan vóór oplevering (geen syntaxfouten) —
    dit bevestigt alleen dat de code geldig Python is, NIET dat de hardwarelogica klopt.
-2. Linux: `i2cdetect -y 1` bevestigt 0x38 + 0x48 → draai `linux_rpi5/sensor_reader.py` los.
-3. Windows: sluit MCP2221A aan, controleer Apparaatbeheer (HID-apparaat zichtbaar) → draai
-   `windows_lattepanda/sensor_reader.py` los.
+2. Linux: `i2cdetect -y 1` bevestigt 0x38 + 0x48 → `python3 linux_rpi5/sensor_reader.py --diagnose`.
+3. Windows: sluit MCP2221A aan → `.\loods.cmd diagnose` (controleert USB, I2C-scan, elke sensor
+   apart en de PIR, met hints bij fouten).
 4. Embedded: `ls -l /dev/i2c-*` → als leeg, ga direct naar het MCP2221A-USB-fallbackpad en
    implementeer de `NotImplementedError`-stubs in `Mcp2221UsbAdapter` (zie datasheet AN1) vóórdat
    je verder gaat — dit IS de bekende, vooraf gevlagde onzekerheid in dit plan.

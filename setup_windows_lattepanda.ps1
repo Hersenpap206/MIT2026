@@ -85,14 +85,16 @@ $dirs = @(
 foreach ($d in $dirs) { New-Item -ItemType Directory -Force $d | Out-Null }
 OK "Mapstructuur aangemaakt"
 
-Stap "6. Whisper tiny model downloaden"
-$whisperModel = "D:\Loods WP3\modellen\whisper\tiny.pt"
-if (Test-Path $whisperModel) {
-    OK "Whisper tiny model al aanwezig — sla over"
-} else {
-    Info "Downloaden via Whisper (72MB)..."
-    & $pip -c "import whisper; whisper.load_model('tiny', download_root=r'D:\Loods WP3\modellen\whisper')"
-    OK "Whisper tiny model gedownload"
+Stap "6. Whisper modellen downloaden (tiny + small)"
+foreach ($m in @(@{naam="tiny"; mb=72}, @{naam="small"; mb=461})) {
+    $whisperModel = "D:\Loods WP3\modellen\whisper\$($m.naam).pt"
+    if (Test-Path $whisperModel) {
+        OK "Whisper $($m.naam) model al aanwezig — sla over"
+    } else {
+        Info "Downloaden via Whisper ($($m.mb)MB)..."
+        & $pip -c "import whisper; whisper.load_model('$($m.naam)', download_root=r'D:\Loods WP3\modellen\whisper')"
+        OK "Whisper $($m.naam) model gedownload"
+    }
 }
 
 Stap "7. Vosk small-nl model downloaden"
@@ -127,9 +129,9 @@ Set-Content -Path $checkFile -Value $check -Encoding UTF8
 & $pip $checkFile $PSScriptRoot
 
 Write-Host "`n" + ("="*50) -ForegroundColor Green
-Write-Host "Setup klaar! Stel voor elke testrun in:" -ForegroundColor Green
-Write-Host '  $env:LOODS_DEVICE   = "B"   # of "A"' -ForegroundColor Yellow
-Write-Host '  $env:LOODS_OPERATOR = "wim"' -ForegroundColor Yellow
-Write-Host '  $env:LOODS_SW_VERSION = "v1.0-dev"' -ForegroundColor Yellow
-Write-Host "En draai de sensor smoke test zodra MCP2221A binnen is:" -ForegroundColor Green
-Write-Host '  python windows_lattepanda/sensor_reader.py' -ForegroundColor Yellow
+[System.Environment]::SetEnvironmentVariable("LOODS_OPERATOR", "wim", "User")
+Write-Host "Setup klaar! Vervolgstappen (cmd of PowerShell, in deze scripts-map):" -ForegroundColor Green
+Write-Host '  .\loods.cmd device A      # of B — eenmalig, blijft bewaard' -ForegroundColor Yellow
+Write-Host '  .\loods.cmd check         # Drive-offline, packages, mappen, modellen' -ForegroundColor Yellow
+Write-Host '  .\loods.cmd diagnose      # sensor-bedradingscheck (MCP2221A aangesloten)' -ForegroundColor Yellow
+Write-Host "LOODS_SW_VERSION wordt door loods.cmd automatisch op de git-commit gezet." -ForegroundColor Green
