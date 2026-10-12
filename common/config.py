@@ -40,6 +40,15 @@ PLATFORM_EMBEDDED = "Embedded"
 VALID_PLATFORMS = (PLATFORM_LINUX, PLATFORM_WINDOWS, PLATFORM_EMBEDDED)
 VALID_DEVICES = ("A", "B")
 
+# Fysiek board, los van het besturingssysteem. Nodig omdat `platform` die twee vermengt:
+# Android op een RPi5 meldt zich als Embedded, OpenSTLinux op de STM32 als Linux. Zie
+# WP3 Testplan v2/Addendum A - Platform- en OS-haalbaarheid (T5.x).md §5.
+HARDWARE_RPI5 = "RPi5"
+HARDWARE_LATTEPANDA = "LattePanda"
+HARDWARE_STM32 = "STM32MP257F"
+
+VALID_HARDWARE = (HARDWARE_RPI5, HARDWARE_LATTEPANDA, HARDWARE_STM32)
+
 
 def detect_platform() -> str:
     """Best-effort auto-detectie; overschrijf via env var LOODS_PLATFORM indien nodig."""
@@ -57,6 +66,46 @@ def detect_platform() -> str:
             return PLATFORM_EMBEDDED
         return PLATFORM_LINUX
     return PLATFORM_EMBEDDED
+
+
+def detect_hardware() -> str:
+    """Welk fysiek board; overschrijf via env var LOODS_HARDWARE.
+
+    Auto-detectie leest de device-tree (Linux/Android op RPi5 en STM32). Levert dat niets op —
+    o.a. op x86 onder Windows — dan een lege string: liever een leeg veld dan een geraden board.
+    Zet op de LattePanda's dus LOODS_HARDWARE handmatig."""
+    override = os.environ.get("LOODS_HARDWARE")
+    if override:
+        return override
+    try:
+        model = Path("/proc/device-tree/model").read_text(errors="ignore")
+    except OSError:
+        return ""
+    if "Raspberry Pi 5" in model:
+        return HARDWARE_RPI5
+    if "STM32MP25" in model:
+        return HARDWARE_STM32
+    return ""
+
+
+def detect_os_versie() -> str:
+    """Besturingssysteem inclusief versie; overschrijf via env var LOODS_OS.
+
+    Op Linux/Android komt dit uit PRETTY_NAME in /etc/os-release (bv. 'Debian GNU/Linux 13
+    (trixie)'), op Windows uit de platform-module. Een LineageOS-build meldt zichzelf niet
+    betrouwbaar — zet LOODS_OS daar expliciet."""
+    override = os.environ.get("LOODS_OS")
+    if override:
+        return override
+    try:
+        for regel in Path("/etc/os-release").read_text(errors="ignore").splitlines():
+            if regel.startswith("PRETTY_NAME="):
+                return regel.split("=", 1)[1].strip().strip('"')
+    except OSError:
+        pass
+    if _platform.system() == "Windows":
+        return f"Windows {_platform.release()} {_platform.version()}"
+    return ""
 
 
 def device_id() -> str:
@@ -149,6 +198,8 @@ class RunContext:
     """Metadata die bij elke meetrun wordt vastgelegd t.b.v. reproduceerbaarheid/publicatie."""
 
     platform: str = field(default_factory=detect_platform)
+    hardware: str = field(default_factory=detect_hardware)
+    os_versie: str = field(default_factory=detect_os_versie)
     device: str = field(default_factory=device_id)
     operator: str = os.environ.get("LOODS_OPERATOR", "onbekend")
     software_version: str = os.environ.get("LOODS_SW_VERSION", "v1.0-dev")
@@ -159,3 +210,10 @@ class RunContext:
             raise ValueError(f"Onbekend platform: {self.platform!r}")
         if self.device not in VALID_DEVICES:
             raise ValueError(f"Onbekend device: {self.device!r}")
+        # Leeg is toegestaan (detectie lukt niet overal); een ingevulde waarde moet wel kloppen,
+        # anders levert T5.x een dataset op waarin dezelfde hardware onder twee namen voorkomt.
+        if self.hardware and self.hardware not in VALID_HARDWARE:
+            raise ValueError(
+                f"Onbekende hardware: {self.hardware!r} — kies uit {VALID_HARDWARE} "
+                "of breid VALID_HARDWARE uit (en werk Addendum A §5 bij)"
+            )

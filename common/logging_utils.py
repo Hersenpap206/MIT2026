@@ -34,6 +34,8 @@ CSV_FIELDS = [
     "test_id",
     "fase",
     "platform",
+    "hardware",
+    "os_versie",
     "device",
     "device_serial",
     "engine",
@@ -78,6 +80,8 @@ class MeasurementRow:
     datum: str = field(default_factory=lambda: date.today().isoformat())
     tijd: str = field(default_factory=lambda: datetime.now().strftime("%H:%M:%S"))
     platform: str = ""
+    hardware: str = ""
+    os_versie: str = ""
     device: str = ""
     device_serial: str = ""
     engine: str = ""
@@ -150,6 +154,8 @@ class TestLogger:
             test_id=self.test_id,
             fase=self.fase,
             platform=self.context.platform,
+            hardware=self.context.hardware,
+            os_versie=self.context.os_versie,
             device=self.context.device,
             device_serial=self.context.device_serial,
             software_version=self.context.software_version,
@@ -168,6 +174,8 @@ class TestLogger:
             "test_id": self.test_id,
             "fase": self.fase,
             "platform": self.context.platform,
+            "hardware": self.context.hardware,
+            "os_versie": self.context.os_versie,
             "device": self.context.device,
             "exported_at": datetime.now().isoformat(timespec="seconds"),
             "n_rows": len(self._rows),
