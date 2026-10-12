@@ -26,9 +26,9 @@ if [[ "$DEVICE" != "A" && "$DEVICE" != "B" ]]; then
     exit 1
 fi
 
-stap "1. Systeempackages installeren (i2c-tools, python3-smbus, libportaudio2)"
+stap "1. Systeempackages installeren (i2c-tools, python3-smbus, python3-lgpio, libportaudio2)"
 sudo apt update
-sudo apt install -y python3-smbus i2c-tools libportaudio2 unzip
+sudo apt install -y python3-smbus python3-lgpio i2c-tools libportaudio2 unzip
 ok "Systeempackages geinstalleerd"
 
 stap "2. I2C inschakelen"
@@ -119,4 +119,4 @@ echo "  - Grove PIR direct op GPIO17 (pin 11), buiten de GrovePi+ om"
 echo "  - ReSpeaker 4 Mic Array via USB aansluiten, test vind_respeaker_device_index() los"
 echo "  - Azure Speech vereist nog een API-key (env var, zie speech/azure_speech.py)"
 echo "Open een nieuwe shell (of 'source ~/.bashrc') zodat LOODS_DEVICE actief is."
-echo -e "Draai daarna de sensor smoke test:\n\033[33m  python3 linux_rpi5/sensor_reader.py\033[0m"
+echo -e "Draai daarna de bedradingscheck:\n\033[33m  python3 linux_rpi5/sensor_reader.py --diagnose\033[0m"
