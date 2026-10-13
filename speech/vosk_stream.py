@@ -81,7 +81,7 @@ def main() -> None:
     parser.add_argument("--fase", default="spraakherkenning")
     parser.add_argument(
         "--model-path",
-        default=str(LOODS_MODEL_DIR / "vosk-model-nl"),
+        default=str(LOODS_MODEL_DIR / "vosk" / "vosk-model-small-nl-0.22"),
         help="pad naar uitgepakt Vosk-taalmodel (NL); standaard onder LOODS_MODEL_DIR",
     )
     parser.add_argument("--mic-config", default="ReSpeaker-default")
