@@ -3,12 +3,15 @@ Vosk-batchrunner (lokale, lichte streaming-herkenner, testplan T2.1 — alternat
 zwakkere SBC's). Vosk draait volledig offline met een klein vooraf gedownload taalmodel en is
 geschikt als low-resource-vergelijkingspunt, met name relevant voor het STM32MP257F-EV1-platform.
 
-Modeldownload (NL): https://alphacephei.com/vosk/models — pak uit naar een lokale map en geef het
-pad door via --model-path. Dit script downloadt NIETS automatisch (geen netwerk-aanname).
+Modeldownload (NL): https://alphacephei.com/vosk/models — pak uit onder LOODS_MODEL_DIR (standaard
+`D:\\Loods WP3\\modellen\\vosk-model-nl`), dezelfde plek waar whisper_runner.py zijn modellen zet.
+Dit script downloadt NIETS automatisch (geen netwerk-aanname).
 
 Gebruik:
-    python vosk_stream.py --manifest corpus/T2.1_manifest.csv --test-id T2.1 \
-        --model-path /pad/naar/vosk-model-nl
+    python vosk_stream.py --manifest corpus/T2.1_manifest.csv --test-id T2.1
+
+    # model op een afwijkende plek:
+    python vosk_stream.py --manifest ... --test-id T2.1 --model-path /pad/naar/vosk-model-nl
 """
 
 from __future__ import annotations
@@ -21,6 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from common.config import LOODS_MODEL_DIR
 from common.engine_runner import run_engine_batch
 
 try:
@@ -75,11 +79,25 @@ def main() -> None:
     parser.add_argument("--manifest", required=True, help="pad naar manifest-CSV (zie common/engine_runner.py)")
     parser.add_argument("--test-id", required=True, help="bv. T2.1")
     parser.add_argument("--fase", default="spraakherkenning")
-    parser.add_argument("--model-path", required=True, help="pad naar uitgepakt Vosk-taalmodel (NL)")
+    parser.add_argument(
+        "--model-path",
+        default=str(LOODS_MODEL_DIR / "vosk-model-nl"),
+        help="pad naar uitgepakt Vosk-taalmodel (NL); standaard onder LOODS_MODEL_DIR",
+    )
     parser.add_argument("--mic-config", default="ReSpeaker-default")
     parser.add_argument("--afstand-m", type=float, default=None)
     parser.add_argument("--herhalingen", type=int, default=1)
     args = parser.parse_args()
+
+    # Ook op een lege map controleren: de modelmap staat op de testdevices al klaar om in uit te
+    # pakken, en vosk.Model() geeft op een lege map een onnavolgbare fout.
+    model_dir = Path(args.model_path)
+    if not model_dir.is_dir() or not any(model_dir.iterdir()):
+        raise SystemExit(
+            f"Geen Vosk-model in: {args.model_path}\n"
+            "Download een NL-model van https://alphacephei.com/vosk/models en pak het daar uit,\n"
+            "of geef een ander pad met --model-path."
+        )
 
     transcribe_fn = maak_transcribe_fn(args.model_path)
     samenvatting = run_engine_batch(
