@@ -131,5 +131,6 @@ Write-Host "Setup klaar! Stel voor elke testrun in:" -ForegroundColor Green
 Write-Host '  $env:LOODS_DEVICE   = "B"   # of "A"' -ForegroundColor Yellow
 Write-Host '  $env:LOODS_OPERATOR = "wim"' -ForegroundColor Yellow
 Write-Host '  $env:LOODS_SW_VERSION = "v1.0-dev"' -ForegroundColor Yellow
+Write-Host '  $env:LOODS_HARDWARE = "LattePanda"   # verplicht: x86 heeft geen device-tree' -ForegroundColor Yellow
 Write-Host "En draai de sensor smoke test zodra MCP2221A binnen is:" -ForegroundColor Green
 Write-Host '  python windows_lattepanda/sensor_reader.py' -ForegroundColor Yellow
