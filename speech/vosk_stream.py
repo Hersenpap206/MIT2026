@@ -3,9 +3,10 @@ Vosk-batchrunner (lokale, lichte streaming-herkenner, testplan T2.1 — alternat
 zwakkere SBC's). Vosk draait volledig offline met een klein vooraf gedownload taalmodel en is
 geschikt als low-resource-vergelijkingspunt, met name relevant voor het STM32MP257F-EV1-platform.
 
-Modeldownload (NL): https://alphacephei.com/vosk/models — pak uit onder LOODS_MODEL_DIR (standaard
-`D:\\Loods WP3\\modellen\\vosk-model-nl`), dezelfde plek waar whisper_runner.py zijn modellen zet.
-Dit script downloadt NIETS automatisch (geen netwerk-aanname).
+Modeldownload (NL): https://alphacephei.com/vosk/models — pak uit onder LOODS_MODEL_DIR, standaard
+`D:\\Loods WP3\\modellen\\vosk\\vosk-model-small-nl-0.22`; dat is ook de plek waar
+setup_windows_lattepanda.ps1 (stap 7) het model neerzet, en whisper_runner.py zet zijn modellen
+naast die map. Dit script downloadt NIETS automatisch (geen netwerk-aanname).
 
 Gebruik:
     python vosk_stream.py --manifest corpus/T2.1_manifest.csv --test-id T2.1
