@@ -23,7 +23,7 @@
 # geluidsopstellingen in plaats van tussen twee devices.
 
 param(
-    [Parameter(Mandatory = $true)][ValidateSet("T2.1", "T2.2")][string]$TestId,
+    [Parameter(Mandatory = $true)][ValidateSet("T2.1", "T2.2", "T2.1M", "T2.2M")][string]$TestId,
     [Parameter(Mandatory = $true)][string]$Device,
     [double]$Afstand = 0,
     [string[]]$Alleen = @(),
