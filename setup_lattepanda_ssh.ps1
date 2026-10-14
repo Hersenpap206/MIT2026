@@ -10,6 +10,7 @@
 
 param(
     [Parameter(Mandatory = $true)][ValidateSet("A", "B")][string]$Device,
+    [string]$Account = "",
     [string]$OsVersie = "",
     [switch]$GeenSleutels
 )
@@ -72,7 +73,9 @@ if (-not $GeenSleutels) {
     # ook wanneer het doelaccount zelf geen beheerder is. Op die verwarring strandde de eerste
     # inrichting van device A: de sleutel belandde in administrators_authorized_keys terwijl sshd
     # voor dat account in het gebruikersprofiel keek.
-    $doelAccount = $env:USERNAME
+    # Voorkeur voor het meegegeven account: de starter stelt dat vast vóór de UAC-verhoging,
+    # toen $env:USERNAME nog het echte gebruikersaccount was.
+    $doelAccount = if ($Account) { $Account } else { $env:USERNAME }
     $isAdminAccount = $false
     try {
         foreach ($lid in (Get-LocalGroupMember -Group "Administrators" -ErrorAction Stop)) {
@@ -103,8 +106,9 @@ if (-not $GeenSleutels) {
             $doel = "$env:ProgramData\ssh\administrators_authorized_keys"
             Info "Dit account is administrator, dus sleutels gaan naar administrators_authorized_keys"
         } else {
-            $doel = "$env:USERPROFILE\.ssh\authorized_keys"
-            New-Item -ItemType Directory -Force "$env:USERPROFILE\.ssh" | Out-Null
+            # Profiel van het doelaccount, niet van het verhoogde proces.
+            $doel = "C:\Users\$doelAccount\.ssh\authorized_keys"
+            New-Item -ItemType Directory -Force (Split-Path $doel -Parent) | Out-Null
         }
 
         $bestaand = if (Test-Path $doel) { Get-Content $doel } else { @() }
