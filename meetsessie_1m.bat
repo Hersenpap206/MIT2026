@@ -24,6 +24,9 @@ if "%TESTID%"=="" set TESTID=T2.1
 set SRC=%~dp0
 set SRC=%SRC:~0,-1%
 set LOKAAL=%USERPROFILE%\Werk\scripts
+REM Dit script hoort op de WERKLAPTOP te draaien: daar heet de sleutel id_ed25519 (standaardnaam,
+REM aangemaakt door setup_werklaptop.bat), zodat wimboeve@IP werkt zonder ssh-config of agent.
+REM Op WinDevelop heet de sleutel id_ed25519_rasp2 en werkt alleen de alias-vorm (rasp1-loc).
 set RASP1=wimboeve@192.168.137.239
 set RASP2=wimboeve@192.168.137.213
 set PS=powershell -NoProfile -ExecutionPolicy Bypass -File
