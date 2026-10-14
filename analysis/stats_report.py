@@ -38,6 +38,7 @@ from common.config import (
     FRR_DREMPEL_PCT,
     LATENTIE_DREMPEL_MS,
     REPLICATIE_DREMPEL_PCT,
+    REPLICATIE_PAREN,
     WER_BASELINE_DREMPEL_PCT,
     WER_NACHTZORG_DREMPEL_PCT,
 )
@@ -71,7 +72,13 @@ def beschrijvende_statistiek(df: "pd.DataFrame") -> "pd.DataFrame":
 
 
 def replicatie_check(df: "pd.DataFrame") -> "pd.DataFrame":
-    """Vergelijkt gemiddelde WER tussen Device A en B per platform x engine x fase x afstand_m."""
+    """Vergelijkt de gemiddelde WER tussen de twee devices van elk platform.
+
+    De devicenamen verschillen per platform (A/B op de Pi's, LP1/LP2 op de LattePanda's,
+    STM1/STM2 op de STM32); welk tweetal bij elkaar hoort staat in REPLICATIE_PAREN. Een eerdere
+    versie ging uit van de namen A en B en sloeg de toets stilzwijgend over zodra een platform
+    andere namen gebruikte — dat is een stille fout in een eis die juist getoetst moet worden.
+    """
     if "wer_pct" not in df.columns or df["wer_pct"].notna().sum() == 0:
         return pd.DataFrame()
 
@@ -82,13 +89,28 @@ def replicatie_check(df: "pd.DataFrame") -> "pd.DataFrame":
         .mean()
         .unstack("device")
     )
-    if "A" not in gem_per_device.columns or "B" not in gem_per_device.columns:
-        print("Replicatie-check overgeslagen: niet beide devices A en B aangetroffen in de data.")
+
+    resultaten = []
+    for platform_naam, (eerste, tweede) in REPLICATIE_PAREN.items():
+        if platform_naam not in gem_per_device.index.get_level_values("platform"):
+            continue
+        deel = gem_per_device.xs(platform_naam, level="platform", drop_level=False)
+        if eerste not in deel.columns or tweede not in deel.columns:
+            print(f"Replicatie-check voor {platform_naam} overgeslagen: "
+                  f"niet beide devices ({eerste} en {tweede}) in de data.")
+            continue
+        deel = deel.copy()
+        deel["device_1"] = eerste
+        deel["device_2"] = tweede
+        deel["repl_diff_pct"] = (deel[eerste] - deel[tweede]).abs()
+        deel["boven_drempel"] = deel["repl_diff_pct"] > REPLICATIE_DREMPEL_PCT
+        resultaten.append(deel)
+
+    if not resultaten:
+        print("Replicatie-check overgeslagen: geen enkel platform heeft beide devices in de data.")
         return pd.DataFrame()
 
-    gem_per_device["repl_diff_pct"] = (gem_per_device["A"] - gem_per_device["B"]).abs()
-    gem_per_device["boven_drempel"] = gem_per_device["repl_diff_pct"] > REPLICATIE_DREMPEL_PCT
-    return gem_per_device.round(2)
+    return pd.concat(resultaten).round(2)
 
 
 def drempeltoetsen(df: "pd.DataFrame") -> list[str]:

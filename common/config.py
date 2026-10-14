@@ -38,7 +38,26 @@ PLATFORM_WINDOWS = "Windows"
 PLATFORM_EMBEDDED = "Embedded"
 
 VALID_PLATFORMS = (PLATFORM_LINUX, PLATFORM_WINDOWS, PLATFORM_EMBEDDED)
-VALID_DEVICES = ("A", "B")
+
+# Devicenamen zijn sprekend en gelijk aan de hostnaam van de machine, zodat een meetbestand of
+# mapnaam zonder context te plaatsen is. Tot 14 oktober 2026 heetten de Raspberry Pi's in de
+# meetdata A en B, terwijl de machines zelf Rasp1 en Rasp2 heten; die inconsistentie is toen
+# opgeheven met analysis/migreer_devicenamen.py. De oude namen zijn bewust NIET meer geldig: een
+# device dat nog op de oude naam staat geconfigureerd, valt nu meteen op in plaats van stilletjes
+# naast de rest te meten.
+VALID_DEVICES = (
+    "RASP1", "RASP2",    # Linux / Raspberry Pi 5
+    "LP1", "LP2",        # Windows / LattePanda 3 Delta
+    "STM1", "STM2",      # Embedded / STM32MP257F-EV1
+)
+
+# Welke twee devices samen het replicatiepaar van een platform vormen. De analyse mag niet
+# aannemen hoe devices heten; zie analysis/stats_report.py.
+REPLICATIE_PAREN = {
+    PLATFORM_LINUX: ("RASP1", "RASP2"),
+    PLATFORM_WINDOWS: ("LP1", "LP2"),
+    PLATFORM_EMBEDDED: ("STM1", "STM2"),
+}
 
 # Fysiek board, los van het besturingssysteem. Nodig omdat `platform` die twee vermengt:
 # Android op een RPi5 meldt zich als Embedded, OpenSTLinux op de STM32 als Linux. Zie
@@ -109,10 +128,19 @@ def detect_os_versie() -> str:
 
 
 def device_id() -> str:
-    """A of B — stel in via env var LOODS_DEVICE=A of LOODS_DEVICE=B per fysiek device."""
-    value = os.environ.get("LOODS_DEVICE", "A").strip().upper()
+    """Naam van dit fysieke device; stel in via env var LOODS_DEVICE.
+
+    Geen standaardwaarde: tot 14 oktober 2026 viel deze terug op "A", waardoor een device waar
+    de variabele niet gezet was stilzwijgend als device A wegschreef. Bij twee devices per
+    platform maakt dat de replicatietoets zinloos zonder dat er een fout zichtbaar wordt."""
+    value = os.environ.get("LOODS_DEVICE", "").strip().upper()
+    if not value:
+        raise ValueError(
+            f"LOODS_DEVICE is niet gezet. Kies een van: {', '.join(VALID_DEVICES)} "
+            "(de naam van dit device, gelijk aan de hostnaam)"
+        )
     if value not in VALID_DEVICES:
-        raise ValueError(f"LOODS_DEVICE moet 'A' of 'B' zijn, kreeg: {value!r}")
+        raise ValueError(f"LOODS_DEVICE moet een van {VALID_DEVICES} zijn, kreeg: {value!r}")
     return value
 
 

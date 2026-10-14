@@ -37,14 +37,14 @@ if "%DEVICE%"=="VRAAG" set DEVICE=
 if "%DEVICE%"=="" (
     echo.
     echo Welk device is deze machine?
-    echo   A = eerste LattePanda
-    echo   B = tweede LattePanda
+    echo   1 = LP1, eerste LattePanda
+    echo   2 = LP2, tweede LattePanda
     echo.
-    echo LET OP: beide machines op A zetten maakt de replicatietoets zinloos.
+    echo LET OP: beide machines dezelfde naam geven maakt de replicatietoets zinloos.
     echo.
-    choice /c AB /n /m "Kies A of B: "
-    if errorlevel 2 set DEVICE=B
-    if errorlevel 1 if not errorlevel 2 set DEVICE=A
+    choice /c 12 /n /m "Kies 1 of 2: "
+    if errorlevel 2 set DEVICE=LP2
+    if errorlevel 1 if not errorlevel 2 set DEVICE=LP1
 )
 
 echo.

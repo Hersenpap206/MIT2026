@@ -9,7 +9,7 @@
 # Na afloop is de machine bereikbaar met: ssh wimboeve@<ip>
 
 param(
-    [Parameter(Mandatory = $true)][ValidateSet("A", "B")][string]$Device,
+    [Parameter(Mandatory = $true)][ValidateSet("LP1", "LP2")][string]$Device,
     [string]$Account = "",
     [string]$OsVersie = "",
     [switch]$GeenSleutels
