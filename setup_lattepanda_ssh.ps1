@@ -67,8 +67,23 @@ if (-not $GeenSleutels) {
     # Windows gebruikt voor leden van de groep Administrators NIET ~/.ssh/authorized_keys maar
     # een gezamenlijk bestand. Dit is de meest voorkomende oorzaak van "Permission denied
     # (publickey)" op een verder correct ingerichte Windows-sshd.
-    $adminSid = New-Object Security.Principal.SecurityIdentifier("S-1-5-32-544")
-    $isAdminAccount = ([Security.Principal.WindowsIdentity]::GetCurrent()).Groups -contains $adminSid
+    # Let op: hier moet gekeken worden naar het account waarmee straks wordt INGELOGD, niet naar
+    # het proces. Dit script draait verhoogd, dus het proces heeft altijd het beheerderstoken —
+    # ook wanneer het doelaccount zelf geen beheerder is. Op die verwarring strandde de eerste
+    # inrichting van device A: de sleutel belandde in administrators_authorized_keys terwijl sshd
+    # voor dat account in het gebruikersprofiel keek.
+    $doelAccount = $env:USERNAME
+    $isAdminAccount = $false
+    try {
+        foreach ($lid in (Get-LocalGroupMember -Group "Administrators" -ErrorAction Stop)) {
+            if ((($lid.Name -split '\\')[-1]) -eq $doelAccount) { $isAdminAccount = $true }
+        }
+    } catch {
+        Waarschuw "Groepsleden niet op te vragen; val terug op het procestoken"
+        $adminSid = New-Object Security.Principal.SecurityIdentifier("S-1-5-32-544")
+        $isAdminAccount = ([Security.Principal.WindowsIdentity]::GetCurrent()).Groups -contains $adminSid
+    }
+    Info "doelaccount '$doelAccount' is administrator: $isAdminAccount"
 
     $sleutels = @()
     foreach ($naam in @("windevelop_key.pub", "werklaptop_key.pub")) {
