@@ -36,6 +36,11 @@ except ImportError as exc:  # pragma: no cover
         "faster-whisper ontbreekt — installeer met: pip install faster-whisper"
     ) from exc
 
+try:
+    import soundfile as sf
+except ImportError as exc:  # pragma: no cover
+    raise ImportError("soundfile ontbreekt — installeer met: pip install soundfile") from exc
+
 _MODEL_CACHE: dict[tuple[str, str], "WhisperModel"] = {}
 
 
@@ -61,8 +66,14 @@ def maak_transcribe_fn(model_naam: str, taal: str = "nl", compute_type: str = "i
     model = _laad_model(model_naam, compute_type)
 
     def transcribe_fn(wav_path: Path) -> str:
-        segmenten, _info = model.transcribe(str(wav_path), language=taal)
-        # transcribe() levert een generator: pas bij het uitlezen wordt er gerekend, dus dit
+        # De audio wordt zelf ingelezen en als array doorgegeven, in plaats van faster-whisper
+        # het pad te laten openen. Dat vermijdt de audio-decoder PyAV: faster-whisper 1.2.1
+        # roept die met een parameter aan die in PyAV 19 niet meer bestaat
+        # ("open() got an unexpected keyword argument 'metadata_errors'"). Het testcorpus is
+        # 16 kHz mono, precies wat het model verwacht, dus er wordt niets geresampled.
+        audio, _samplerate = sf.read(str(wav_path), dtype="float32", always_2d=False)
+        segmenten, _info = model.transcribe(audio, language=taal)
+        # transcribe() levert een generator: pas bij het uitlezen wordt er gerekend, dus dat
         # moet binnen de gemeten functie gebeuren en niet erbuiten.
         return " ".join(s.text.strip() for s in segmenten).strip()
 
