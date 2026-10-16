@@ -104,6 +104,16 @@ def replicatie_check(df: "pd.DataFrame") -> "pd.DataFrame":
         deel["device_2"] = tweede
         deel["repl_diff_pct"] = (deel[eerste] - deel[tweede]).abs()
         deel["boven_drempel"] = deel["repl_diff_pct"] > REPLICATIE_DREMPEL_PCT
+        # Zonder meting op beide devices is repl_diff_pct NaN, en NaN > drempel geeft False.
+        # Die False leest als "getoetst en geslaagd" terwijl er niets getoetst is — dezelfde
+        # stille fout als hierboven beschreven. Markeer zulke rijen daarom expliciet.
+        ontbreekt = deel["repl_diff_pct"].isna()
+        deel["boven_drempel"] = deel["boven_drempel"].astype("object")
+        deel.loc[ontbreekt, "boven_drempel"] = "niet getoetst"
+        if ontbreekt.any():
+            engines = ", ".join(sorted({str(i) for i in deel.index[ontbreekt].get_level_values("engine")}))
+            print(f"Replicatie-check {platform_naam}: geen paar voor {engines} "
+                  f"— alleen op een van beide devices gemeten.")
         resultaten.append(deel)
 
     if not resultaten:
@@ -187,7 +197,7 @@ def schrijf_rapport(df: "pd.DataFrame", out_dir: str | Path) -> Path:
         if not bevindingen:
             fh.write("- (geen toetsbare data aangetroffen — controleer of de juiste fase-namen gebruikt zijn)\n")
 
-        fh.write("\n## Replicatie-check (Device A vs. B, drempel "
+        fh.write("\n## Replicatie-check (de twee devices per platform, drempel "
                   f"{REPLICATIE_DREMPEL_PCT}%)\n\n")
         if replicatie.empty:
             fh.write("(geen replicatie-vergelijkbare data aangetroffen)\n")
