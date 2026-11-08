@@ -142,7 +142,11 @@ def run_corpus(
             logger.log_run(
                 testcorpus_uiting_id=rij["uiting_id"],
                 latentie_ms=detectielatentie_ms,
-                opmerkingen=f"onset_verwacht_s={onset_verwacht_s}; modus={modus}; {opmerking}",
+                # aggressiveness en rms_drempel stonden hier niet in. Drie runs met
+                # verschillende standen waren daardoor in de data niet van elkaar te
+                # onderscheiden, waarmee de vergelijking waarvoor ze gedraaid waren onmogelijk was.
+                opmerkingen=(f"aggressiveness={aggressiveness}; rms_drempel={rms_drempel}; "
+                             f"onset_verwacht_s={onset_verwacht_s}; modus={modus}; {opmerking}"),
             )
             print(f"{rij['uiting_id']}: detectielatentie={detectielatentie_ms:.1f}ms ({opmerking})")
 

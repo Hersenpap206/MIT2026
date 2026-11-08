@@ -49,6 +49,20 @@ def zoek_device(hint: str, invoer: bool) -> int:
     raise SystemExit(f"geen {'invoer' if invoer else 'uitvoer'}apparaat gevonden voor hint {hint!r}")
 
 
+def aanloopstilte_s(mp3: Path) -> float:
+    """Stilte aan het begin van de mp3, in seconden.
+
+    De TTS-bestanden beginnen met 150 tot 325 ms stilte. Zonder die correctie is
+    onset_verwacht_s het moment waarop het afspelen begon en niet waarop de spraak begint, en
+    meet T4.2 voor een flink deel de bestandsopbouw in plaats van de detectie.
+    """
+    x, sr = sf.read(str(mp3), dtype="float32", always_2d=True)
+    x = x[:, 0]
+    drempel = max(float(np.max(np.abs(x))) * 0.02, 1e-4)
+    boven = np.flatnonzero(np.abs(x) > drempel)
+    return float(boven[0]) / sr if len(boven) else 0.0
+
+
 def neem_op(mp3: Path, in_dev: int, out_dev: int, voorloop: float, naloop: float,
             demping_db: float = 0.0):
     """Speelt mp3 af en neemt gelijktijdig op. Geeft (opname, onset_s) terug."""
@@ -120,8 +134,9 @@ def main() -> None:
         if not mp3.is_file():
             print(f"  {n:3d}/{len(rijen)} {uid:8s} mp3 ONTBREEKT - overgeslagen")
             continue
-        opname, onset = neem_op(mp3, in_dev, out_dev, args.voorloop, args.naloop,
-                                args.demping_db)
+        opname, afspeelstart = neem_op(mp3, in_dev, out_dev, args.voorloop, args.naloop,
+                                       args.demping_db)
+        onset = afspeelstart + aanloopstilte_s(mp3)
         wav = doel / f"{uid}.wav"
         sf.write(str(wav), opname, OPNAME_SR, subtype="PCM_16")
         niveau = dbfs(opname)
@@ -142,6 +157,7 @@ def main() -> None:
             "categorie": rij.get("categorie", ""),
             "afstand_m": f"{args.afstand_m}",
             "onset_verwacht_s": f"{onset:.3f}",
+            "afspeelstart_s": f"{afspeelstart:.3f}",
         })
 
     if not manifest:
