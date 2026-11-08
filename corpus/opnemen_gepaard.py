@@ -33,6 +33,7 @@ import soundfile as sf
 
 OPNAME_SR = 16000
 RMS_DREMPEL_DBFS = -45.0
+PIEK_DREMPEL_DBFS = -0.5
 
 
 def dbfs(x: np.ndarray) -> float:
@@ -48,13 +49,16 @@ def zoek_device(hint: str, invoer: bool) -> int:
     raise SystemExit(f"geen {'invoer' if invoer else 'uitvoer'}apparaat gevonden voor hint {hint!r}")
 
 
-def neem_op(mp3: Path, in_dev: int, out_dev: int, voorloop: float, naloop: float):
+def neem_op(mp3: Path, in_dev: int, out_dev: int, voorloop: float, naloop: float,
+            demping_db: float = 0.0):
     """Speelt mp3 af en neemt gelijktijdig op. Geeft (opname, onset_s) terug."""
     data, sr = sf.read(str(mp3), dtype="float32", always_2d=True)
     out_kanalen = sd.query_devices(out_dev)["max_output_channels"]
     if data.shape[1] == 1 and out_kanalen >= 2:
         data = np.repeat(data, 2, axis=1)
     data = data[:, :out_kanalen]
+    if demping_db:
+        data = data * (10.0 ** (-abs(demping_db) / 20.0))
 
     blokken = []
     def cb(indata, frames, tijd, status):
@@ -85,6 +89,8 @@ def main() -> None:
     ap.add_argument("--naloop", type=float, default=0.8)
     ap.add_argument("--invoer-hint", default="ReSpeaker")
     ap.add_argument("--uitvoer-hint", default="Realtek")
+    ap.add_argument("--demping-db", type=float, default=0.0,
+                    help="verzwak het afspeelsignaal, tegen klippen in de opname")
     ap.add_argument("--alleen", type=int, default=0, help="beperk tot de eerste N uitingen (proefrun)")
     args = ap.parse_args()
 
@@ -94,7 +100,10 @@ def main() -> None:
     print(f"afspelen via : {sd.query_devices(out_dev)['name'].strip()}")
 
     code = "d" + f"{args.afstand_m:.1f}".replace(".", "")
-    doel = Path(args.uit) / code
+    # De set hoort in het pad: T2.2 en T2.2M gebruiken dezelfde uiting-id's, dus zonder
+    # dat overschrijft de tweede run de opnames van de eerste.
+    setnaam = Path(args.bron).stem.replace("bron_", "")
+    doel = Path(args.uit) / setnaam / code
     doel.mkdir(parents=True, exist_ok=True)
 
     with open(args.bron, newline="", encoding="utf-8") as fh:
@@ -104,26 +113,31 @@ def main() -> None:
     print(f"{len(rijen)} uitingen op {args.afstand_m} m naar {doel}")
     print()
 
-    manifest, stil = [], []
+    manifest, stil, klip = [], [], []
     for n, rij in enumerate(rijen, 1):
         uid = rij["uiting_id"]
         mp3 = Path(args.mp3_map) / f"{uid}.mp3"
         if not mp3.is_file():
             print(f"  {n:3d}/{len(rijen)} {uid:8s} mp3 ONTBREEKT - overgeslagen")
             continue
-        opname, onset = neem_op(mp3, in_dev, out_dev, args.voorloop, args.naloop)
+        opname, onset = neem_op(mp3, in_dev, out_dev, args.voorloop, args.naloop,
+                                args.demping_db)
         wav = doel / f"{uid}.wav"
         sf.write(str(wav), opname, OPNAME_SR, subtype="PCM_16")
         niveau = dbfs(opname)
+        piek = 20.0 * np.log10(max(float(np.max(np.abs(opname))) / 32768.0, 1e-9))
         vlag = ""
         if niveau < RMS_DREMPEL_DBFS:
             vlag = "  << TE STIL"
             stil.append(uid)
+        elif piek >= PIEK_DREMPEL_DBFS:
+            vlag = "  << KLIPT"
+            klip.append(uid)
         print(f"  {n:3d}/{len(rijen)} {uid:8s} {len(opname)/OPNAME_SR:5.2f}s  "
               f"{niveau:7.2f} dBFS  onset {onset:.3f}s{vlag}")
         manifest.append({
             "uiting_id": uid,
-            "wav_path": f"opnames/gepaard/{code}/{uid}.wav",
+            "wav_path": f"opnames/gepaard/{setnaam}/{code}/{uid}.wav",
             "referentietekst": rij["tekst"],
             "categorie": rij.get("categorie", ""),
             "afstand_m": f"{args.afstand_m}",
@@ -133,8 +147,7 @@ def main() -> None:
     if not manifest:
         raise SystemExit("niets opgenomen")
 
-    naam = Path(args.bron).stem.replace("bron_", "")
-    mpad = Path(f"corpus/{naam}_gepaard_{code}_manifest.csv")
+    mpad = Path(f"corpus/{setnaam}_gepaard_{code}_manifest.csv")
     with open(mpad, "w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=list(manifest[0].keys()))
         w.writeheader()
@@ -142,6 +155,10 @@ def main() -> None:
 
     print()
     print(f"manifest: {mpad} ({len(manifest)} regels)")
+    if klip:
+        print()
+        print(f"WAARSCHUWING: {len(klip)} opname(s) klippen op vol schaal: {', '.join(klip[:8])}")
+        print("Verhoog --demping-db; afgekapte toppen vervormen de spraak en verhogen de WER.")
     if stil:
         print()
         print(f"WAARSCHUWING: {len(stil)} opname(s) onder {RMS_DREMPEL_DBFS} dBFS: {', '.join(stil[:8])}")
