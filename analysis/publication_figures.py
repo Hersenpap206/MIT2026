@@ -60,6 +60,8 @@ def _bewaar(fig: "plt.Figure", out_dir: Path, naam: str) -> None:
 
 def figuur_wer_vs_afstand(df: "pd.DataFrame", out_dir: Path) -> None:
     subset = df.dropna(subset=["wer_pct", "afstand_m", "engine"])
+    # Zonder uiting-id is het de samenvattingsregel van de run, niet een meting.
+    subset = subset[subset["testcorpus_uiting_id"].notna()]
     if subset.empty:
         print("  WER-vs-afstand overgeslagen: geen rijen met zowel wer_pct als afstand_m")
         return
@@ -77,6 +79,8 @@ def figuur_wer_vs_afstand(df: "pd.DataFrame", out_dir: Path) -> None:
 
 def figuur_wer_boxplot(df: "pd.DataFrame", out_dir: Path) -> None:
     subset = df.dropna(subset=["wer_pct", "engine"])
+    # Zonder uiting-id is het de samenvattingsregel van de run, niet een meting.
+    subset = subset[subset["testcorpus_uiting_id"].notna()]
     if subset.empty:
         print("  WER-boxplot overgeslagen: geen rijen met wer_pct")
         return
@@ -94,6 +98,8 @@ def figuur_wer_boxplot(df: "pd.DataFrame", out_dir: Path) -> None:
 
 def figuur_heatmap_platform_engine(df: "pd.DataFrame", out_dir: Path) -> None:
     subset = df.dropna(subset=["wer_pct", "platform", "engine"])
+    # Zonder uiting-id is het de samenvattingsregel van de run, niet een meting.
+    subset = subset[subset["testcorpus_uiting_id"].notna()]
     if subset.empty:
         print("  Heatmap overgeslagen: geen rijen met wer_pct/platform/engine")
         return

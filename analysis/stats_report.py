@@ -50,6 +50,25 @@ NUMERIEKE_KOLOMMEN = [
 ]
 
 
+
+def losse_uitingen(df):
+    """Alleen de meetregels per uiting, zonder de samenvattingsregel van elke run.
+
+    Elke engine-run schrijft naast de losse uitingen een samenvattingsregel weg: geen
+    testcorpus_uiting_id, maar wel een wer_pct met het geaggregeerde resultaat (en
+    latentie_ms_gem in plaats van latentie_ms). Een `dropna(subset=["wer_pct"])` laat die regel
+    dus staan, waarmee hij als extra observatie meetelt. Op het gemiddelde is dat effect klein -
+    de regel is immers het gemiddelde van zijn eigen groep - maar elke spreidingsmaat wordt
+    erdoor te klein, en daarmee elk betrouwbaarheidsinterval te smal.
+
+    Sensorregels (T1.1) hebben eveneens geen uiting-id, maar ook geen wer_pct; die vallen al weg
+    op de eerste voorwaarde en worden hier dus niet onbedoeld weggefilterd.
+    """
+    d = df.dropna(subset=["wer_pct"])
+    if "testcorpus_uiting_id" not in d.columns:
+        return d
+    return d[d["testcorpus_uiting_id"].notna()]
+
 def laad_master(master_path: str | Path) -> "pd.DataFrame":
     df = pd.read_csv(master_path, dtype=str)
     for kolom in NUMERIEKE_KOLOMMEN:
@@ -84,7 +103,7 @@ def replicatie_check(df: "pd.DataFrame") -> "pd.DataFrame":
 
     groep_kolommen = ["platform", "fase", "engine", "afstand_m"]
     gem_per_device = (
-        df.dropna(subset=["wer_pct"])
+        losse_uitingen(df)
         .groupby(groep_kolommen + ["device"])["wer_pct"]
         .mean()
         .unstack("device")
@@ -129,10 +148,18 @@ def drempeltoetsen(df: "pd.DataFrame") -> list[str]:
     bevindingen: list[str] = []
 
     if "wer_pct" in df.columns and df["wer_pct"].notna().any():
-        for fase_naam, drempel in (("baseline", WER_BASELINE_DREMPEL_PCT), ("nachtzorg", WER_NACHTZORG_DREMPEL_PCT)):
-            subset = df[df["fase"].str.contains(fase_naam, case=False, na=False)]
+        los = losse_uitingen(df)
+        # De conditie zit in test_id, niet in fase. Hierop werd eerder op `fase` gezocht naar
+        # "baseline" of "nachtzorg", maar de runners zetten fase op "spraakherkenning"; daardoor
+        # was deze toets altijd leeg en werd de WER-eis nooit beoordeeld - zwijgend, want een lege
+        # subset leverde geen bevinding en dus ook geen waarschuwing.
+        for test_id, conditie, drempel in (("T2.1", "baseline", WER_BASELINE_DREMPEL_PCT),
+                                           ("T2.2", "nachtzorg", WER_NACHTZORG_DREMPEL_PCT)):
+            subset = los[los["test_id"] == test_id]
             if subset.empty:
+                bevindingen.append(f"WER ({conditie}): geen {test_id}-metingen in de dataset - niet getoetst")
                 continue
+            fase_naam = conditie
             for (platform, engine), groep in subset.groupby(["platform", "engine"]):
                 gem_wer = groep["wer_pct"].mean()
                 status = "OVER DREMPEL" if gem_wer > drempel else "binnen drempel"
