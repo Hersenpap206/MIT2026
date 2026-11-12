@@ -164,12 +164,35 @@ def meet_kanalen(apparaat: int, kanalen: int, frequentie: int, seconden: float,
         spreiding = max(niveaus) - min(niveaus)
         print()
         print(f"  verschil tussen hoogste en laagste kanaal: {spreiding:.2f} dB")
+
+        # Gelijke niveaus kunnen toeval zijn; alleen een bitvergelijking beslist of twee
+        # kanalen werkelijk hetzelfde signaal dragen. Dat onderscheid bepaalt of er een
+        # ruw kanaal bestaat om de AGC-vraag op te toetsen.
+        identiek = [(a, b) for a in range(kanalen) for b in range(a + 1, kanalen)
+                    if np.array_equal(opname[:, a], opname[:, b])]
+        if identiek:
+            paren = ", ".join(f"{a}={b}" for a, b in identiek)
+            print(f"  BIT-IDENTIEKE kanaalparen: {paren}")
+            print("  Die kanalen dragen hetzelfde signaal; het zijn geen aparte microfoons.")
         if spreiding > 10:
-            print("  Een verschil van deze orde wijst op een bewerkt kanaal naast ruwe kanalen,")
+            print("  Het niveauverschil wijst op een bewerkt kanaal naast ruwe kanalen,")
             print("  zoals de 21,6 dB die de AGC op de Mic Array v2.0 toevoegt.")
+        elif identiek and len(identiek) == kanalen * (kanalen - 1) // 2:
+            print("  Alle kanalen zijn hetzelfde: effectief een monobron van de bewerkte")
+            print("  uitgang. Er is geen ruw kanaal, dus de AGC-vraag is hier niet te toetsen.")
         else:
-            print("  Alle kanalen liggen dicht bij elkaar: waarschijnlijk allemaal bewerkt,")
-            print("  of allemaal ruw. Zonder ruw kanaal is de AGC-vraag hier niet te toetsen.")
+            print("  De kanalen liggen dicht bij elkaar: waarschijnlijk allemaal bewerkt, of")
+            print("  allemaal ruw. Zonder ruw kanaal is de AGC-vraag hier niet te toetsen.")
+
+    # Een stille kamer waarin het niveau over de meting omhoog kruipt, is het handschrift
+    # van een AGC die versterking bijregelt. Vijf blokken is genoeg om dat te zien.
+    if seconden >= 20:
+        print()
+        print("  niveauverloop op kanaal 0 (AGC zichtbaar als het omhoog kruipt):")
+        per = len(opname) // 5
+        for i in range(5):
+            segment = opname[i * per:(i + 1) * per, 0]
+            print(f"    blok {i + 1}: {dbfs(segment):7.2f} dBFS")
 
     if doel is not None:
         doel.mkdir(parents=True, exist_ok=True)
