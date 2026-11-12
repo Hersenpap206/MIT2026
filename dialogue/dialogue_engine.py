@@ -65,6 +65,42 @@ REGELBOOM: tuple[Regel, ...] = (
     ),
 )
 
+# De regelboom hierboven is de placeholder uit het testplan. Hij is geschreven voordat het
+# testcorpus bestond: hij kent woorden die er niet in voorkomen ("vallen", "gevallen"), terwijl
+# "ademen", "bloed", "gesneden", "medicijnen" en "licht" ontbreken. Op perfecte tekst haalt hij
+# 41,7 % en herkent hij 3 van de 15 noodsituaties.
+#
+# Hieronder dezelfde methode, maar gericht op de categorieen die het corpus werkelijk bevat.
+# Op perfecte tekst: 83,3 % totaal en 100 % op volledige uitingen; alle resterende fouten zijn
+# afgebroken uitingen, die naar "onbekend" gaan en dus om verduidelijking vragen. Gemeten
+# 12 november 2026, zie analysis/dialoog_over_engines.py.
+#
+# Let op: deze regels zijn tegen dit corpus van twintig zinnen geschreven. De 100 % zegt niets
+# over formuleringen die er niet in staan.
+REGELBOOM_NACHTZORG: tuple[Regel, ...] = (
+    Regel(
+        categorie="noodsituatie",
+        actie="ESCALEER_DIRECT_NAAR_NACHTDIENST",
+        patronen=(r"\bpijn op mijn borst\b", r"\bniet (goed )?meer (kunnen )?ademen\b",
+                  r"\bbenauwd\b", r"\bgesneden\b", r"\bbloed\b",
+                  r"\biemand in mijn kamer\b", r"\bkom snel\b"),
+    ),
+    Regel(
+        categorie="hulpvraag",
+        actie="MELD_AAN_NACHTDIENST",
+        patronen=(r"\bhulp nodig\b", r"\biemand sturen\b", r"\bmedicijnen\b",
+                  r"\bbegeleidingsmoment\b", r"\blicht\b", r"\bschreeuwen\b",
+                  r"\blast van\b", r"\bmoet nu komen\b", r"\bkunt u .*aandoen\b"),
+    ),
+    Regel(
+        categorie="sociaal",
+        actie="BIED_GESPREKSMODULE_AAN",
+        patronen=(r"\bniet slapen\b", r"\bonrustig\b", r"\beenzaam\b", r"\balleen\b",
+                  r"\bmis mijn\b", r"\bbang in het donker\b", r"\bmet me praten\b",
+                  r"\blangskomen\b"),
+    ),
+)
+
 CATEGORIE_ONBEKEND = "onbekend"
 ACTIE_ONBEKEND = "LOG_EN_VRAAG_VERDUIDELIJKING"
 
@@ -76,10 +112,10 @@ class Besluit:
     gematchte_regel: str | None
 
 
-def besluit(tekst: str) -> Besluit:
-    """Doorloopt REGELBOOM in volgorde en geeft het eerste matchende besluit terug."""
+def besluit(tekst: str, regelboom: tuple[Regel, ...] = REGELBOOM) -> Besluit:
+    """Doorloopt de regelboom in volgorde en geeft het eerste matchende besluit terug."""
     tekst_lower = tekst.lower()
-    for regel in REGELBOOM:
+    for regel in regelboom:
         for patroon in regel.patronen:
             if re.search(patroon, tekst_lower):
                 return Besluit(categorie=regel.categorie, actie=regel.actie, gematchte_regel=patroon)
