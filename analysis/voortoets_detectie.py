@@ -16,12 +16,7 @@ aanloopstilte van de spraakopnames werd ook als spraak aangemerkt. Twee klassen 
 verschillende ruimtes op twee momenten zijn nu eenmaal langs tientallen wegen te onderscheiden die
 niets met spraak te maken hebben.
 
-**LET OP — de code hieronder voert nog de verworpen opzet uit.** De beschrijving van de mengopzet
-hierna is het ontwerp voor de volgende stap; die is nog niet geïmplementeerd. Wie dit script nu
-draait, krijgt de sessie-vergelijking met de ingebouwde controle die de fout aantoont - nuttig om
-te reproduceren, maar geen antwoord op de vraag.
-
-**Volgende opzet: mengen.** Beide klassen krijgen exact dezelfde achtergrond. Van elk nachtvenster
+**Huidige opzet: mengen.** Beide klassen krijgen exact dezelfde achtergrond. Van elk nachtvenster
 wordt de helft gebruikt zoals het is (geen spraak) en de andere helft met een gefluisterde uiting
 erdoorheen gemengd, geschaald op de verhouding die in de kamer is gemeten: spraak 2,5 dB boven het
 achtergrondgeluid. Daarmee is de vraag zuiver - kan de inhoud van het signaal spraak aanwijzen die
@@ -145,12 +140,8 @@ def voorspel(X, w):
 
 # ------------------------------------------------------------------------ main
 
-def main() -> None:
-    spraakmappen = [Path(sys.argv[1]) / "T2.2" / "d10", Path(sys.argv[1]) / "T2.2M" / "d10"]
-    nachtmap = Path(sys.argv[2])
-    manifestmap = Path(sys.argv[3])
-
-    # categorie en spraakaanzet per uiting
+def laad_spraak(spraakmappen, manifestmap):
+    """Spraakfragmenten van 1 seconde, met hun categorie en bronbestand."""
     meta = {}
     for naam in ("T2.2", "T2.2M"):
         m = manifestmap / f"{naam}_gepaard_d10_manifest.csv"
@@ -160,79 +151,95 @@ def main() -> None:
             for r in csv.DictReader(fh):
                 meta[(naam, r["uiting_id"])] = (r.get("categorie", ""),
                                                 float(r.get("onset_verwacht_s", 1.0)))
-
-    spraak_X, spraak_bestand, spraak_cat = [], [], []
-    stilte_X, stilte_bestand = [], []          # aanloopstilte: de controle
+    frag, cat, bron = [], [], []
+    per = int(VENSTER_S * SR)
     for map_ in spraakmappen:
         setnaam = map_.parts[-2]
         for wav in sorted(map_.glob("*.wav")):
-            cat, onset = meta.get((setnaam, wav.stem), ("onbekend", 1.0))
+            c, onset = meta.get((setnaam, wav.stem), ("onbekend", 1.0))
             x = lees_wav(wav)
-            # spraakdeel: vanaf de aanzet tot 0,5 s voor het einde
             kern = x[int(onset * SR):max(int(onset * SR), len(x) - int(0.5 * SR))]
-            for v in kenmerken(kern):
-                spraak_X.append(v); spraak_bestand.append(f"{setnaam}/{wav.stem}"); spraak_cat.append(cat)
-            # aanloopstilte, ruim voor de aanzet
-            voor = x[:max(0, int((onset - 0.15) * SR))]
-            for v in kenmerken(voor):
-                stilte_X.append(v); stilte_bestand.append(f"{setnaam}/{wav.stem}")
+            for s in range(0, len(kern) - per + 1, per // 2):   # halve overlap
+                stuk = kern[s:s + per]
+                if np.sqrt(np.mean(stuk ** 2)) < 1e-4:          # stille staart overslaan
+                    continue
+                frag.append(stuk); cat.append(c); bron.append(f"{setnaam}/{wav.stem}")
+    return frag, np.array(cat), np.array(bron)
 
-    nacht_X, nacht_bestand = [], []
+
+def bouw(nachtmap, frag, cat, bron, snr_db):
+    """Maakt twee klassen met exact dezelfde achtergrond: ruis, en ruis met spraak erdoorheen."""
+    per = int(VENSTER_S * SR)
+    X, y, groep_nacht, groep_spraak, categorie = [], [], [], [], []
+    idx = RNG.permutation(len(frag))
+    teller = 0
     for wav in sorted(nachtmap.glob("*.wav")):
-        for v in kenmerken(lees_wav(wav)):
-            nacht_X.append(v); nacht_bestand.append(wav.stem)
+        ruis = lees_wav(wav)
+        for s in range(0, len(ruis) - per + 1, per):
+            venster = ruis[s:s + per]
+            rms_r = float(np.sqrt(np.mean(venster ** 2))) + 1e-9
+            if teller % 2 == 0:                      # klasse 0: alleen achtergrond
+                X.append(kenmerken_van(venster)); y.append(0)
+                groep_nacht.append(wav.stem); groep_spraak.append(""); categorie.append("-")
+            else:                                    # klasse 1: achtergrond plus spraak
+                j = idx[(teller // 2) % len(idx)]
+                sp = frag[j]
+                rms_s = float(np.sqrt(np.mean(sp ** 2))) + 1e-9
+                schaal = (rms_r * 10 ** (snr_db / 20.0)) / rms_s
+                gemengd = np.clip(venster + sp * schaal, -1.0, 1.0)
+                X.append(kenmerken_van(gemengd)); y.append(1)
+                groep_nacht.append(wav.stem); groep_spraak.append(bron[j]); categorie.append(cat[j])
+            teller += 1
+    return (np.array(X, dtype=np.float32), np.array(y, dtype=np.float32),
+            np.array(groep_nacht), np.array(groep_spraak), np.array(categorie))
 
-    spraak_X = np.array(spraak_X); nacht_X = np.array(nacht_X); stilte_X = np.array(stilte_X)
-    print(f"spraakvensters      {len(spraak_X):5d}  uit {len(set(spraak_bestand))} opnames")
-    print(f"nachtvensters       {len(nacht_X):5d}  uit {len(set(nacht_bestand))} blokken")
-    print(f"aanloopstilte       {len(stilte_X):5d}  (controle, zelfde sessie als de spraak)")
+
+def kenmerken_van(x):
+    lm = logmel(x)
+    return np.concatenate([lm.mean(axis=0), lm.std(axis=0)]).astype(np.float32)
+
+
+def main() -> None:
+    spraakmappen = [Path(sys.argv[1]) / "T2.2" / "d10", Path(sys.argv[1]) / "T2.2M" / "d10"]
+    nachtmap = Path(sys.argv[2])
+    manifestmap = Path(sys.argv[3])
+    snrs = [float(a) for a in sys.argv[4:]] or [2.5]
+
+    frag, cat, bron = laad_spraak(spraakmappen, manifestmap)
+    print(f"spraakfragmenten van {VENSTER_S:.0f} s: {len(frag)} uit {len(set(bron))} opnames")
+    print(f"nachtblokken: {len(list(nachtmap.glob('*.wav')))}")
+    print()
+    print("De spraak wordt door het nachtgeluid gemengd, zodat beide klassen exact dezelfde")
+    print("achtergrond hebben. 2,5 dB is de in de kamer gemeten verhouding.")
     print()
 
-    # splitsen op bestand, niet op venster
-    sb, nb = sorted(set(spraak_bestand)), sorted(set(nacht_bestand))
-    RNG.shuffle(sb); RNG.shuffle(nb)
-    s_test, n_test = set(sb[:len(sb) // 3]), set(nb[:max(1, len(nb) // 3)])
-    sb_arr = np.array(spraak_bestand); nb_arr = np.array(nacht_bestand)
-    s_tr, n_tr = ~np.isin(sb_arr, list(s_test)), ~np.isin(nb_arr, list(n_test))
+    for snr in snrs:
+        X, y, g_nacht, g_spraak, categorie = bouw(nachtmap, frag, cat, bron, snr)
+        blokken = sorted(set(g_nacht)); opnames = sorted(set(b for b in g_spraak if b))
+        RNG.shuffle(blokken); RNG.shuffle(opnames)
+        test_blok = set(blokken[:max(1, len(blokken) // 3)])
+        test_opn = set(opnames[:len(opnames) // 3])
+        # een venster hoort bij test als zijn nachtblok OF zijn spraakopname in de testset zit
+        is_test = np.isin(g_nacht, list(test_blok)) | np.array(
+            [b in test_opn for b in g_spraak])
+        tr, te = ~is_test, is_test
 
-    Xtr = np.vstack([spraak_X[s_tr], nacht_X[n_tr]])
-    ytr = np.concatenate([np.ones(s_tr.sum()), np.zeros(n_tr.sum())]).astype(np.float32)
-    mu, sd = Xtr.mean(0), Xtr.std(0) + 1e-6
-    w = train((Xtr - mu) / sd, ytr)
+        mu, sd = X[tr].mean(0), X[tr].std(0) + 1e-6
+        w = train((X[tr] - mu) / sd, y[tr])
+        p = voorspel((X[te] - mu) / sd, w)
 
-    p_spraak = voorspel((spraak_X[~s_tr] - mu) / sd, w)
-    p_nacht = voorspel((nacht_X[~n_tr] - mu) / sd, w)
-    print(f"getest op {len(s_test)} opnames en {len(n_test)} nachtblokken die niet zijn getraind")
-    print()
-
-    print("UITKOMST OP DE TESTVERZAMELING")
-    print("=" * 66)
-    for drempel in (0.5, 0.9, 0.95, 0.99):
-        gevonden = (p_spraak >= drempel).mean() * 100
-        vals = (p_nacht >= drempel).mean() * 100
-        print(f"  drempel {drempel:4.2f}:  spraak herkend {gevonden:5.1f} %   "
-              f"vals alarm op nachtgeluid {vals:5.1f} %")
-
-    print()
-    print("DE CONTROLE: wat doet het model met de aanloopstilte van de spraakopnames?")
-    print("=" * 66)
-    st = np.array(stilte_bestand)
-    p_stilte = voorspel((stilte_X[np.isin(st, list(s_test))] - mu) / sd, w)
-    if len(p_stilte):
-        print(f"  n={len(p_stilte)}   als spraak aangemerkt bij drempel 0,5: {(p_stilte >= 0.5).mean()*100:.1f} %")
-        print("  Laag betekent dat het model spraak herkent; hoog betekent dat het de opnamesessie")
-        print("  herkent en de uitkomst hierboven dus niets waard is.")
-    else:
-        print("  geen aanloopstilte beschikbaar")
-
-    print()
-    print("PER CATEGORIE (testverzameling, drempel 0,5)")
-    print("=" * 66)
-    cat_arr = np.array(spraak_cat)[~s_tr]
-    for c in sorted(set(cat_arr)):
-        sel = cat_arr == c
-        if sel.sum():
-            print(f"  {c:14s} n={sel.sum():4d}   herkend als spraak: {(p_spraak[sel] >= 0.5).mean()*100:5.1f} %")
+        spraak, ruis = p[y[te] == 1], p[y[te] == 0]
+        print(f"=== spraak {snr:+.1f} dB boven het achtergrondgeluid ===")
+        print(f"  getraind op {tr.sum()} vensters, getest op {te.sum()}")
+        for drempel in (0.5, 0.9):
+            print(f"    drempel {drempel:3.1f}:  spraak herkend {(spraak >= drempel).mean()*100:5.1f} %"
+                  f"   vals alarm {(ruis >= drempel).mean()*100:5.1f} %")
+        ct = categorie[te][y[te] == 1]
+        for c in sorted(set(ct)):
+            sel = ct == c
+            if sel.sum() > 3:
+                print(f"      {c:12s} n={sel.sum():4d}  herkend {(spraak[sel] >= 0.5).mean()*100:5.1f} %")
+        print()
 
 
 if __name__ == "__main__":
