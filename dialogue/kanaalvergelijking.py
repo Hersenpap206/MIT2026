@@ -66,13 +66,34 @@ def dbfs(x: np.ndarray) -> float:
     return 20.0 * np.log10(max(rms, 1e-9))
 
 
-def zoek_invoer(hint: str) -> int:
-    """Geeft het apparaatnummer van de eerste invoer waarvan de naam de hint bevat."""
-    for nummer, apparaat in enumerate(sd.query_devices()):
-        if hint.lower() in apparaat["name"].lower() and apparaat["max_input_channels"] > 0:
-            return nummer
-    raise SystemExit(f"geen invoerapparaat gevonden met '{hint}' in de naam; "
-                     f"beschikbaar:\n{sd.query_devices()}")
+def zoek_invoer(hint: str, kanalen: int) -> int:
+    """Geeft het apparaatnummer van een invoer die de hint bevat en genoeg kanalen heeft.
+
+    Het kanaalaantal is hier geen bijzaak maar het onderscheid. Zit er naast de Mic Array v2.0
+    ook een ReSpeaker Lite aan dezelfde Pi, dan bevatten beide namen 'ReSpeaker' en zou de naam
+    alleen de verkeerde microfoon kunnen opleveren - met een verloren meetnacht als gevolg. De
+    Lite heeft 2 kanalen, de Mic Array v2.0 heeft 6.
+    """
+    kandidaten = [(nummer, apparaat) for nummer, apparaat in enumerate(sd.query_devices())
+                  if hint.lower() in apparaat["name"].lower()
+                  and apparaat["max_input_channels"] > 0]
+    if not kandidaten:
+        raise SystemExit(f"geen invoerapparaat gevonden met '{hint}' in de naam;\n"
+                         f"{sd.query_devices()}")
+
+    passend = [(n, a) for n, a in kandidaten if a["max_input_channels"] >= kanalen]
+    if not passend:
+        regels = "\n".join(f"  [{n}] {a['name'].strip()} - {a['max_input_channels']} kanalen"
+                           for n, a in kandidaten)
+        raise SystemExit(f"gevonden apparaten met '{hint}' hebben geen {kanalen} kanalen:\n"
+                         f"{regels}\nHangt de Mic Array v2.0 er wel aan? "
+                         f"Of bedoelde je --kanalen 2?")
+    if len(passend) > 1:
+        regels = "\n".join(f"  [{n}] {a['name'].strip()} - {a['max_input_channels']} kanalen"
+                           for n, a in passend)
+        print(f"let op: meer dan een passend apparaat gevonden, de eerste wordt gebruikt:\n"
+              f"{regels}", flush=True)
+    return passend[0][0]
 
 
 def zet_agc(tuning: Path | None, aan: bool) -> str:
@@ -126,7 +147,7 @@ def main() -> None:
               f"({(begin - nu).total_seconds() / 60:.0f} min)", flush=True)
         time.sleep((begin - nu).total_seconds())
 
-    apparaat = zoek_invoer(args.invoer_hint)
+    apparaat = zoek_invoer(args.invoer_hint, args.kanalen)
     print(f"opnemen via {sd.query_devices(apparaat)['name'].strip()}, "
           f"{args.kanalen} kanalen, {SR} Hz", flush=True)
     print(f"log: {log}", flush=True)
