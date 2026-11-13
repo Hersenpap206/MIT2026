@@ -60,8 +60,10 @@ CONDITIES: dict[str, tuple[tuple[str, str], ...]] = {
 
 
 def dbfs(x: np.ndarray) -> float:
+    """Niveau in dBFS. Let op de normalisatie: de opnames zijn int16, dus delen door 32768,
+    anders komt het niveau 90,3 dB te hoog uit (zelfde vorm als in opnemen_gepaard.py)."""
     r = float(np.sqrt(np.mean(np.square(x.astype(np.float64)))))
-    return 20 * np.log10(max(r, 1e-9))
+    return -999.0 if r <= 0 else 20.0 * np.log10(r / 32768.0)
 
 
 def zoek_device(hint: str, invoer: bool) -> int:
@@ -181,17 +183,21 @@ def meet_niveaus(opname: np.ndarray, onset_s: float, aanloop_s: float,
     return uit
 
 
-def uitingen_uit_bron(bron: Path, mp3_map: Path, categorie: str | None,
-                      alleen: int) -> list[tuple[str, Path, str, str]]:
+def uitingen_uit_bron(bron: Path, mp3_map: Path | None, categorie: str | None,
+                      alleen: int) -> list[tuple[str, Path | None, str, str]]:
+    """Leest de uitingen uit het bronbestand. Zonder mp3-map (fluistermodus) vervalt de
+    controle of er een geluidsbestand bij hoort."""
     rijen = []
     with bron.open(newline="", encoding="utf-8") as fh:
         for r in csv.DictReader(fh):
             if categorie and r["categorie"] != categorie:
                 continue
-            mp3 = mp3_map / f"{r['uiting_id']}.mp3"
-            if not mp3.is_file():
-                print(f"  overgeslagen, geen mp3: {mp3}", flush=True)
-                continue
+            mp3 = None
+            if mp3_map is not None:
+                mp3 = mp3_map / f"{r['uiting_id']}.mp3"
+                if not mp3.is_file():
+                    print(f"  overgeslagen, geen mp3: {mp3}", flush=True)
+                    continue
             rijen.append((r["uiting_id"], mp3, r["tekst"], r["categorie"]))
     return rijen[:alleen] if alleen else rijen
 
@@ -301,6 +307,85 @@ def meten(args) -> None:
     print("gemeten verhouding leggen naast de curve uit analysis/kanaalnacht_analyse.py.")
 
 
+def fluisteren(args) -> None:
+    """Neemt een mens op die de corpuszinnen fluistert, in plaats van een luidspreker.
+
+    Dit is de zuiverste vorm van de meting. Een luidspreker laat de uitkomst afhangen van de
+    volumeknop; een mens die op 1,0 meter fluistert is het verschijnsel zelf. Bijkomend is dit
+    de eerste meting in het project met een echte stem - alle bestaande opnames komen uit
+    Edge TTS.
+    """
+    rijen = uitingen_uit_bron(Path(args.bron), None, args.categorie, args.alleen)
+    if not rijen:
+        raise SystemExit("geen uitingen geselecteerd")
+    uit = Path(args.uit).expanduser()
+    uit.mkdir(parents=True, exist_ok=True)
+    in_dev = zoek_device(args.invoer_hint, True)
+    condities = [c.strip() for c in args.condities.split(",") if c.strip()]
+
+    print(f"opnemen via {sd.query_devices(in_dev)['name'].strip()}")
+    print(f"{len(rijen)} zinnen x {len(condities)} condities\n")
+    print("Ga op ongeveer 1,0 meter van de microfoon zitten en fluister de zin zoals een client")
+    print("dat 's nachts zou doen. Tijdens 'stil' mag er geen geluid zijn: dat stuk is de")
+    print("ruismeting. Na afloop kun je een opname overdoen met r.\n")
+
+    log = uit / "fluister_manifest.csv"
+    velden = (["conditie", "uiting_id", "categorie", "referentietekst", "wav_path"]
+              + [f"k{k}_{veld}" for k in range(KANALEN) for veld in ("ruis", "spraak", "snr")])
+    with log.open("w", newline="", encoding="utf-8") as fh:
+        schrijver = csv.DictWriter(fh, fieldnames=velden)
+        schrijver.writeheader()
+        for conditie in condities:
+            stand = zet_conditie(Path(args.tuning) if args.tuning else None, conditie)
+            print(f"\n=== conditie {conditie} ({stand}) ===", flush=True)
+            time.sleep(args.rust_s)
+            snrs_ruw, snrs_k0 = [], []
+            for nr, (uid, _mp3, tekst, categorie) in enumerate(rijen, 1):
+                while True:
+                    print(f"\n[{nr}/{len(rijen)}] {uid} ({categorie})")
+                    print(f'    "{tekst}"')
+                    input("    Enter = beginnen ")
+                    print(f"    stil... ({args.voorloop:.0f} s)", flush=True)
+                    opname = sd.rec(int((args.voorloop + args.spreek_s) * OPNAME_SR),
+                                    samplerate=OPNAME_SR, channels=KANALEN,
+                                    dtype="int16", device=in_dev)
+                    time.sleep(args.voorloop)
+                    print(f"    >>> FLUISTER NU <<<  ({args.spreek_s:.0f} s)", flush=True)
+                    sd.wait()
+
+                    niveau = meet_niveaus(opname, args.voorloop, 0.0, marge_s=0.2)
+                    ruw_snr = float(np.mean([niveau[k]["snr"] for k in RUW]))
+                    ruw_ruis = float(np.mean([niveau[k]["ruis"] for k in RUW]))
+                    afwijking = abs(ruw_ruis - args.ruis_referentie)
+                    vlag = "" if afwijking <= 3.0 else f"  LET OP: ruisvloer wijkt {afwijking:.1f} dB af"
+                    print(f"    kanaal 0 SNR {niveau[BEWERKT]['snr']:6.2f} dB   "
+                          f"ruw {ruw_snr:6.2f} dB   ruisvloer ruw {ruw_ruis:6.2f} dBFS{vlag}")
+                    if input("    Enter = goed, r = overdoen ").strip().lower() != "r":
+                        break
+
+                naam = f"{conditie}_{uid}.wav"
+                sf.write(str(uit / naam), opname, OPNAME_SR, subtype="PCM_16")
+                rij = {"conditie": conditie, "uiting_id": uid, "categorie": categorie,
+                       "referentietekst": tekst, "wav_path": naam}
+                for k in range(KANALEN):
+                    for veld in ("ruis", "spraak", "snr"):
+                        rij[f"k{k}_{veld}"] = round(niveau[k][veld], 2)
+                schrijver.writerow(rij)
+                fh.flush()
+                snrs_ruw.append(ruw_snr)
+                snrs_k0.append(niveau[BEWERKT]["snr"])
+
+            print(f"\n  -> {conditie}: kanaal 0 {np.mean(snrs_k0):.2f} dB, "
+                  f"ruwe microfoons {np.mean(snrs_ruw):.2f} dB", flush=True)
+
+    if args.tuning:
+        print("\nfabrieksstand terugzetten:", zet_conditie(Path(args.tuning), "agc-aan"))
+    print(f"KLAAR; manifest: {log}")
+    print("\nDe ruwe microfoons geven het eerlijke getal, want daar is de versterking constant.")
+    print("Ligt dat op of boven 7,5 dB, dan haalt de transcriptie de eis van 25 % WER")
+    print("(zie de curve in analysis/kanaalnacht_analyse.py).")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="opdracht", required=True)
@@ -334,12 +419,29 @@ def main() -> None:
     pm.add_argument("--rust-s", type=float, default=5.0,
                     help="wachttijd na het wisselen van conditie")
 
-    for p in (pi, pm):
+    pf = sub.add_parser("fluisteren",
+                        help="een mens opnemen die de zinnen fluistert (geen luidspreker)")
+    pf.add_argument("--bron", required=True)
+    pf.add_argument("--uit", default="opnames/fluister")
+    pf.add_argument("--tuning", default=None, help="pad naar tuning.py")
+    pf.add_argument("--condities", default="agc-aan,gain-1")
+    pf.add_argument("--categorie", default=None, help="bv. gefluisterd")
+    pf.add_argument("--alleen", type=int, default=0, help="eerste N zinnen (proefrun)")
+    pf.add_argument("--spreek-s", type=float, default=5.0, help="opnametijd voor de zin")
+    pf.add_argument("--rust-s", type=float, default=5.0)
+    pf.add_argument("--ruis-referentie", type=float, default=-60.7,
+                    help="ruisvloer op de ruwe microfoons in de meetnacht van 12-13 november; "
+                         "wijkt de meting daar ver vanaf, dan is de kamer niet op nachtniveau")
+
+    for p in (pi, pm, pf):
         for vlag, opties in gemeenschappelijk.items():
+            if vlag in ("--uitvoer-hint", "--demping-db", "--toch-afspelen",
+                        "--naloop") and p is pf:
+                continue           # die gelden alleen bij afspelen
             p.add_argument(vlag, **opties)
 
     args = ap.parse_args()
-    (ijken if args.opdracht == "ijken" else meten)(args)
+    {"ijken": ijken, "meten": meten, "fluisteren": fluisteren}[args.opdracht](args)
 
 
 if __name__ == "__main__":
